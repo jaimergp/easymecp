@@ -1,0 +1,26 @@
+[Link]
+%mem=12gb
+%nprocshared=12
+
+[General]
+basis[A|B] m06/gen
+charge 0
+spinstates 1/3
+max_steps: 40
+max_stepsize : 0.1
+pre_opt 3 m06/gen
+show_hessian none
+
+[Cutoffs]
+max_grad: 0.0007
+rms_grad: 0.0005
+max_chg: 0.004
+rms_chg: 0.0025
+energy_diff: 0.00005
+
+[Extra]
+O N 0
+6-31+g(d,p)
+****
+
+

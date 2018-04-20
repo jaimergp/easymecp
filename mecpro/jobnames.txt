@@ -1,0 +1,17 @@
+Jul  24  21:21  example2/
+Jul  24  20:03  example1/
+Jul  24  20:01  OCH/
+Jul  24  19:56  example1-error/
+###
+OCH/
+Converged
+
+example1-error/
+No logs. Either running or had a format error.
+
+example1/
+Converged
+
+example2/
+Reached maximum number of steps.
+
