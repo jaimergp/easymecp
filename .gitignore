@@ -103,3 +103,6 @@ ENV/
 # fortran
 *.o
 *.x
+
+# vscode
+.vscode/
