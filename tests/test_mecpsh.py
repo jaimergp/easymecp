@@ -7,7 +7,7 @@ from mecpsh.mecpsh import MECPCalculation, temporary_directory
 here = os.path.abspath(os.path.dirname(__file__))
 
 @pytest.mark.parametrize("directory",
-sorted(os.listdir(os.path.join(here, 'data')))[0:1]
+sorted(os.listdir(os.path.join(here, 'data')))
 )
 def test_mecpsh(directory):
     cwd = os.getcwd()
