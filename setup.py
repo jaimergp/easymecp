@@ -33,17 +33,17 @@ setup(
     platforms='any',
     classifiers=[
         'Programming Language :: Python',
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Natural Language :: English',
         'Environment :: Console',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Apache Software License',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Topic :: Scientific/Engineering :: Chemistry',
     ],
     entry_points='''
         [console_scripts]
-        mecpsh=mecpsh.mecpsh:main
+        mecpsh=mecpy.mecpsh:main
         '''
     ,
 )

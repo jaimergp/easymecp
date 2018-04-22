@@ -56,10 +56,11 @@ class MECPCalculation(object):
     ERROR = 'ERROR'
     MAX_ITERATIONS_REACHED = 'MAX_ITERATIONS_REACHED'
 
-    def __init__(self, max_steps=20, a_header='Input_Header_A', b_header='Input_Header_B',
+    def __init__(self, max_steps=50, a_header='Input_Header_A', b_header='Input_Header_B',
                  geom='geom', footer='footer', gaussian_exe='g09', TDE='5.d-5',
                  TDXMax='4.d-3', TDXRMS='2.5d-3', TGMax='7.d-4', TGRMS='5.d-4',
-                 FC='gfortran', FFLAGS='-O -ffixed-line-length-none', energy_parser='dft', **kwargs):
+                 energy_parser='dft', FC=os.environ.get('FC', 'gfortran'),
+                 FFLAGS=os.environ.get('FFLAGS', '-O -ffixed-line-length-none'), **kwargs):
         self.max_steps = max_steps
         self.a_header = a_header
         self.b_header = b_header
@@ -326,7 +327,8 @@ class MECPCalculation(object):
 
 def _parse_cli():
     p = argparse.ArgumentParser(prog='mecpsh', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('-f', '--inputfile', metavar='FILE', help='Configuration file.')
+    p.add_argument('-f', '--inputfile', metavar='FILE',
+        help='Configuration file. Each value must be provided in its own line, with syntax <key>: <value>.')
     defaults = _get_defaults()
     for k, v in sorted(defaults.items()):
         p.add_argument('--'+k, default=v, metavar='VALUE', help='{} (default={!r})'.format(USAGE[k], v))
@@ -418,7 +420,8 @@ USAGE = {
     'max_steps': 'Number of iterations to perform until stop or convergence',
     'a_header': 'File containing the top part of system configuration with multiplicity A',
     'b_header': 'File containing the top part of system configuration with multiplicity B',
-    'geom': 'File containing the starting system geometry (element symbols will be converted in atomic numbers automatically)',
+    'geom': 'File containing the starting system geometry '
+            '(element symbols will be converted in atomic numbers automatically)',
     'footer': 'File containing the bottom part of system configuration',
     'energy_parser': 'Which energy should be parsed: dft, mp2, cis, td.',
     'gaussian_exe': 'Path to gaussian executable. Compatible versions: g09, g16',
@@ -427,8 +430,8 @@ USAGE = {
     'TDXRMS': 'Convergence threshold for RMS change of X. Must be a valid Fortran double!',
     'TGMax': 'Convergence threshold for max gradient el. Must be a valid Fortran double!',
     'TGRMS': 'Convergence threshold for rms gradient el. Must be a valid Fortran double!',
-    'FC': 'Fortran compiler',
-    'FFLAGS': 'Fortran compiler flags'
+    'FC': 'Fortran compiler (can also be set with $FC environment variable)',
+    'FFLAGS': 'Fortran compiler flags (can also be set with $FFLAGS environment variable)'
 }
 
 MECP_FORTRAN = """
