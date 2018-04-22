@@ -10,6 +10,8 @@ _For the sake of completeness, I have also included MECPro: a MIT-licensed, Pyth
 
 - You don't have to modify the source code anymore. All the setup steps are performed automatically. For example, the number of atoms is inferred from the geometry input.
 - Geometry can be specified with atomic symbols or numbers. The script will take care of the rest.
+- Convergence criteria can be easily modified.
+- No hardcoded values: use another Gaussian version, Fortran compiler, flags...
 - Self-contained Python executable with no 3rd party dependencies: you can move it around!
 - It still uses the original MECP code behind the scenes, so you can trust the results.
 - Optimization trajectory is written for every step.
@@ -54,6 +56,7 @@ python mecpsh.py --geom initial_geometry --FC ifort
 
 _More details can be found in the command line help message with `python mecpsh.py -h` or `mecpsh -h`._
 
+__TIP__: Use `--gaussian_exe` key to specify the Gaussian executable (version) to use: `g09` or `g16`. Others might work as well.
 
 ### Output
 
