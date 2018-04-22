@@ -1,0 +1,8 @@
+%mem=60GB
+%nproc=16
+%chk=A.chk
+#n PBE1PBE/genecp force guess(read)
+
+First State
+
+1 1

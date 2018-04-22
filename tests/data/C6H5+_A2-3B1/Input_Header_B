@@ -1,0 +1,8 @@
+%mem=60GB
+%nproc=16
+%chk=T1.chk
+#n B3LYP/6-31G** force guess(read)
+
+Second State
+
+1 3

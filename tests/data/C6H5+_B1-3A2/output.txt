@@ -1,0 +1,162 @@
+ProgFile Exists - OK
+First Input OK
+
+Max Gradient El.:   0.127573 (0.000700)   NO
+RMS Gradient El.:   0.027763 (0.000500)   NO
+Max Change of X:    0.089301 (0.004000)   NO
+RMS Change of X:    0.019434 (0.002500)   NO
+Difference in E:    0.013528 (0.000050)   NO
+
+Step Number 0 -- MECP not yet converged
+
+Max Gradient El.:   0.160527 (0.000700)   NO
+RMS Gradient El.:   0.046225 (0.000500)   NO
+Max Change of X:    0.039913 (0.004000)   NO
+RMS Change of X:    0.011463 (0.002500)   NO
+Difference in E:    0.014562 (0.000050)   NO
+
+Step Number 1 -- MECP not yet converged
+
+Max Gradient El.:   0.058241 (0.000700)   NO
+RMS Gradient El.:   0.016072 (0.000500)   NO
+Max Change of X:    0.052152 (0.004000)   NO
+RMS Change of X:    0.013097 (0.002500)   NO
+Difference in E:    0.014631 (0.000050)   NO
+
+Step Number 2 -- MECP not yet converged
+
+Max Gradient El.:   0.068610 (0.000700)   NO
+RMS Gradient El.:   0.015210 (0.000500)   NO
+Max Change of X:    0.100000 (0.004000)   NO
+RMS Change of X:    0.021358 (0.002500)   NO
+Difference in E:    0.013522 (0.000050)   NO
+
+Step Number 3 -- MECP not yet converged
+
+Max Gradient El.:   0.048060 (0.000700)   NO
+RMS Gradient El.:   0.016827 (0.000500)   NO
+Max Change of X:    0.100000 (0.004000)   NO
+RMS Change of X:    0.019909 (0.002500)   NO
+Difference in E:    0.010838 (0.000050)   NO
+
+Step Number 4 -- MECP not yet converged
+
+Max Gradient El.:   0.042034 (0.000700)   NO
+RMS Gradient El.:   0.018928 (0.000500)   NO
+Max Change of X:    0.100000 (0.004000)   NO
+RMS Change of X:    0.021968 (0.002500)   NO
+Difference in E:    0.009415 (0.000050)   NO
+
+Step Number 5 -- MECP not yet converged
+
+Max Gradient El.:   0.175222 (0.000700)   NO
+RMS Gradient El.:   0.069632 (0.000500)   NO
+Max Change of X:    0.100000 (0.004000)   NO
+RMS Change of X:    0.031607 (0.002500)   NO
+Difference in E:    0.006366 (0.000050)   NO
+
+Step Number 6 -- MECP not yet converged
+
+Max Gradient El.:   0.586234 (0.000700)   NO
+RMS Gradient El.:   0.199041 (0.000500)   NO
+Max Change of X:    0.100000 (0.004000)   NO
+RMS Change of X:    0.019911 (0.002500)   NO
+Difference in E:    0.023516 (0.000050)   NO
+
+Step Number 7 -- MECP not yet converged
+
+Max Gradient El.:   0.199212 (0.000700)   NO
+RMS Gradient El.:   0.072083 (0.000500)   NO
+Max Change of X:    0.070339 (0.004000)   NO
+RMS Change of X:    0.031936 (0.002500)   NO
+Difference in E:    0.007113 (0.000050)   NO
+
+Step Number 8 -- MECP not yet converged
+
+Max Gradient El.:   0.108506 (0.000700)   NO
+RMS Gradient El.:   0.044982 (0.000500)   NO
+Max Change of X:    0.046179 (0.004000)   NO
+RMS Change of X:    0.014915 (0.002500)   NO
+Difference in E:    0.003248 (0.000050)   NO
+
+Step Number 9 -- MECP not yet converged
+
+Max Gradient El.:   0.076409 (0.000700)   NO
+RMS Gradient El.:   0.031579 (0.000500)   NO
+Max Change of X:    0.019433 (0.004000)   NO
+RMS Change of X:    0.005919 (0.002500)   NO
+Difference in E:    0.004005 (0.000050)   NO
+
+Step Number 10 -- MECP not yet converged
+
+Max Gradient El.:   0.049458 (0.000700)   NO
+RMS Gradient El.:   0.015519 (0.000500)   NO
+Max Change of X:    0.016061 (0.004000)   NO
+RMS Change of X:    0.005273 (0.002500)   NO
+Difference in E:    0.001653 (0.000050)   NO
+
+Step Number 11 -- MECP not yet converged
+
+Max Gradient El.:   0.010675 (0.000700)   NO
+RMS Gradient El.:   0.004329 (0.000500)   NO
+Max Change of X:    0.009648 (0.004000)   NO
+RMS Change of X:    0.004146 (0.002500)   NO
+Difference in E:    0.000266 (0.000050)   NO
+
+Step Number 12 -- MECP not yet converged
+
+Max Gradient El.:   0.007377 (0.000700)   NO
+RMS Gradient El.:   0.002937 (0.000500)   NO
+Max Change of X:    0.005198 (0.004000)   NO
+RMS Change of X:    0.002152 (0.002500)  YES
+Difference in E:    0.000303 (0.000050)   NO
+
+Step Number 13 -- MECP not yet converged
+
+Max Gradient El.:   0.004317 (0.000700)   NO
+RMS Gradient El.:   0.001975 (0.000500)   NO
+Max Change of X:    0.008473 (0.004000)   NO
+RMS Change of X:    0.003233 (0.002500)   NO
+Difference in E:    0.000152 (0.000050)   NO
+
+Step Number 14 -- MECP not yet converged
+
+Max Gradient El.:   0.003835 (0.000700)   NO
+RMS Gradient El.:   0.001611 (0.000500)   NO
+Max Change of X:    0.005443 (0.004000)   NO
+RMS Change of X:    0.002025 (0.002500)  YES
+Difference in E:    0.000144 (0.000050)   NO
+
+Step Number 15 -- MECP not yet converged
+
+Max Gradient El.:   0.004356 (0.000700)   NO
+RMS Gradient El.:   0.001641 (0.000500)   NO
+Max Change of X:    0.003894 (0.004000)  YES
+RMS Change of X:    0.001505 (0.002500)  YES
+Difference in E:    0.000203 (0.000050)   NO
+
+Step Number 16 -- MECP not yet converged
+
+Max Gradient El.:   0.002984 (0.000700)   NO
+RMS Gradient El.:   0.001091 (0.000500)   NO
+Max Change of X:    0.001015 (0.004000)  YES
+RMS Change of X:    0.000507 (0.002500)  YES
+Difference in E:    0.000141 (0.000050)   NO
+
+Step Number 17 -- MECP not yet converged
+
+Max Gradient El.:   0.000915 (0.000700)   NO
+RMS Gradient El.:   0.000363 (0.000500)  YES
+Max Change of X:    0.000464 (0.004000)  YES
+RMS Change of X:    0.000176 (0.002500)  YES
+Difference in E:    0.000042 (0.000050)  YES
+
+Step Number 18 -- MECP not yet converged
+
+Max Gradient El.:   0.000214 (0.000700)  YES
+RMS Gradient El.:   0.000085 (0.000500)  YES
+Max Change of X:    0.000194 (0.004000)  YES
+RMS Change of X:    0.000082 (0.002500)  YES
+Difference in E:    0.000002 (0.000050)  YES
+
+MECP optimization has converged at Step19

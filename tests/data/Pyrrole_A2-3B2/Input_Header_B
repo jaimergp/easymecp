@@ -1,0 +1,8 @@
+%mem=60GB
+%nproc=16
+%chk=T1.chk
+#n PBE1PBE/6-31G* force guess(read)
+
+First State
+
+0 3

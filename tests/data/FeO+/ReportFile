@@ -1,0 +1,294 @@
+       Geometry Optimization of an MECP
+       Program: J. N. Harvey, March 1999
+         version 2, November 2003
+       Adapted by Tian Lu (sobereva@sina.com)  March 15, 2015
+
+Initial Geometry:
+ 26      0.0000000      0.0000000      1.0000000
+  8      0.0000000      0.0000000      1.6700000
+
+Energy of First State:     -193.3545457240
+Energy of Second State:    -193.0025886790
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:  50.053313 (0.000700)   NO
+RMS Gradient El.:  28.898294 (0.000500)   NO
+Max Change of X:    0.100000 (0.004000)   NO
+RMS Change of X:    0.057735 (0.002500)   NO
+Difference in E:    0.351957 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000     50.05331331
+  2      0.00000000      0.00000000    -50.05331331
+
+Difference Gradient: (RMS * DE:   0.586482)
+  1      0.00000000      0.00000000     -1.01581620
+  2      0.00000000      0.00000000      1.01581620
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step  1
+ 26      0.0000000      0.0000000      0.9000000
+  8      0.0000000      0.0000000      1.7700000
+
+Energy of First State:     -196.9803386610
+Energy of Second State:    -196.8121163400
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:  17.285691 (0.000700)   NO
+RMS Gradient El.:   9.979898 (0.000500)   NO
+Max Change of X:    0.052752 (0.004000)   NO
+RMS Change of X:    0.030457 (0.002500)   NO
+Difference in E:    0.168222 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000     17.28569123
+  2      0.00000000      0.00000000    -17.28569123
+
+Difference Gradient: (RMS * DE:   0.423755)
+  1      0.00000000      0.00000000     -0.73396457
+  2      0.00000000      0.00000000      0.73396457
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step  2
+ 26      0.0000000      0.0000000      0.8472476
+  8      0.0000000      0.0000000      1.8227524
+
+Energy of First State:     -197.7609237960
+Energy of Second State:    -197.6578239120
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:   7.360732 (0.000700)   NO
+RMS Gradient El.:   4.249721 (0.000500)   NO
+Max Change of X:    0.039123 (0.004000)   NO
+RMS Change of X:    0.022588 (0.002500)   NO
+Difference in E:    0.103100 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000      7.36073213
+  2      0.00000000      0.00000000     -7.36073213
+
+Difference Gradient: (RMS * DE:   0.294425)
+  1      0.00000000      0.00000000     -0.50995846
+  2      0.00000000      0.00000000      0.50995846
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step  3
+ 26      0.0000000      0.0000000      0.8081245
+  8      0.0000000      0.0000000      1.8618755
+
+Energy of First State:     -198.1268595260
+Energy of Second State:    -198.0586044500
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:   3.696900 (0.000700)   NO
+RMS Gradient El.:   2.134406 (0.000500)   NO
+Max Change of X:    0.039476 (0.004000)   NO
+RMS Change of X:    0.022792 (0.002500)   NO
+Difference in E:    0.068255 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000      3.69689987
+  2      0.00000000      0.00000000     -3.69689987
+
+Difference Gradient: (RMS * DE:   0.223364)
+  1      0.00000000      0.00000000     -0.38687859
+  2      0.00000000      0.00000000      0.38687859
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step  4
+ 26      0.0000000      0.0000000      0.7686482
+  8      0.0000000      0.0000000      1.9013518
+
+Energy of First State:     -198.3759534720
+Energy of Second State:    -198.3344494520
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:   1.716286 (0.000700)   NO
+RMS Gradient El.:   0.990898 (0.000500)   NO
+Max Change of X:    0.034208 (0.004000)   NO
+RMS Change of X:    0.019750 (0.002500)   NO
+Difference in E:    0.041504 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000      1.71628635
+  2      0.00000000      0.00000000     -1.71628635
+
+Difference Gradient: (RMS * DE:   0.170534)
+  1      0.00000000      0.00000000     -0.29537351
+  2      0.00000000      0.00000000      0.29537351
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step  5
+ 26      0.0000000      0.0000000      0.7344403
+  8      0.0000000      0.0000000      1.9355597
+
+Energy of First State:     -198.5218323350
+Energy of Second State:    -198.4983935670
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:   0.771764 (0.000700)   NO
+RMS Gradient El.:   0.445578 (0.000500)   NO
+Max Change of X:    0.027951 (0.004000)   NO
+RMS Change of X:    0.016138 (0.002500)   NO
+Difference in E:    0.023439 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000      0.77176388
+  2      0.00000000      0.00000000     -0.77176388
+
+Difference Gradient: (RMS * DE:   0.135788)
+  1      0.00000000      0.00000000     -0.23519151
+  2      0.00000000      0.00000000      0.23519151
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step  6
+ 26      0.0000000      0.0000000      0.7064892
+  8      0.0000000      0.0000000      1.9635108
+
+Energy of First State:     -198.6054112010
+Energy of Second State:    -198.5939725010
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:   0.312672 (0.000700)   NO
+RMS Gradient El.:   0.180521 (0.000500)   NO
+Max Change of X:    0.019037 (0.004000)   NO
+RMS Change of X:    0.010991 (0.002500)   NO
+Difference in E:    0.011439 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000      0.31267192
+  2      0.00000000      0.00000000     -0.31267192
+
+Difference Gradient: (RMS * DE:   0.112726)
+  1      0.00000000      0.00000000     -0.19524692
+  2      0.00000000      0.00000000      0.19524692
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step  7
+ 26      0.0000000      0.0000000      0.6874527
+  8      0.0000000      0.0000000      1.9825473
+
+Energy of First State:     -198.6480570880
+Energy of Second State:    -198.6435881080
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:   0.107098 (0.000700)   NO
+RMS Gradient El.:   0.061833 (0.000500)   NO
+Max Change of X:    0.009917 (0.004000)   NO
+RMS Change of X:    0.005726 (0.002500)   NO
+Difference in E:    0.004469 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000      0.10709760
+  2      0.00000000      0.00000000     -0.10709760
+
+Difference Gradient: (RMS * DE:   0.098829)
+  1      0.00000000      0.00000000     -0.17117616
+  2      0.00000000      0.00000000      0.17117616
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step  8
+ 26      0.0000000      0.0000000      0.6775353
+  8      0.0000000      0.0000000      1.9924647
+
+Energy of First State:     -198.6664540680
+Energy of Second State:    -198.6652605740
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:   0.026587 (0.000700)   NO
+RMS Gradient El.:   0.015350 (0.000500)   NO
+Max Change of X:    0.003275 (0.004000)  YES
+RMS Change of X:    0.001891 (0.002500)  YES
+Difference in E:    0.001193 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000      0.02658713
+  2      0.00000000      0.00000000     -0.02658713
+
+Difference Gradient: (RMS * DE:   0.091868)
+  1      0.00000000      0.00000000     -0.15911944
+  2      0.00000000      0.00000000      0.15911944
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step  9
+ 26      0.0000000      0.0000000      0.6742603
+  8      0.0000000      0.0000000      1.9957397
+
+Energy of First State:     -198.6720133530
+Energy of Second State:    -198.6718490890
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:   0.003568 (0.000700)   NO
+RMS Gradient El.:   0.002060 (0.000500)   NO
+Max Change of X:    0.000508 (0.004000)  YES
+RMS Change of X:    0.000293 (0.002500)  YES
+Difference in E:    0.000164 (0.000050)   NO
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000      0.00356783
+  2      0.00000000      0.00000000     -0.00356783
+
+Difference Gradient: (RMS * DE:   0.089572)
+  1      0.00000000      0.00000000     -0.15514356
+  2      0.00000000      0.00000000      0.15514356
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+Geometry at Step 10
+ 26      0.0000000      0.0000000      0.6737526
+  8      0.0000000      0.0000000      1.9962474
+
+Energy of First State:     -198.6728531390
+Energy of Second State:    -198.6728460660
+
+Convergence Check (Actual Value, then Threshold, then Status):
+Max Gradient El.:   0.000153 (0.000700)  YES
+RMS Gradient El.:   0.000088 (0.000500)  YES
+Max Change of X:    0.000023 (0.004000)  YES
+RMS Change of X:    0.000013 (0.002500)  YES
+Difference in E:    0.000007 (0.000050)  YES
+
+Overall Effective Gradient:
+  1      0.00000000      0.00000000      0.00015301
+  2      0.00000000      0.00000000     -0.00015301
+
+Difference Gradient: (RMS * DE:   0.089216)
+  1      0.00000000      0.00000000     -0.15452601
+  2      0.00000000      0.00000000      0.15452601
+
+Parallel Gradient: (RMS:   0.000000)
+  1      0.00000000      0.00000000      0.00000000
+  2      0.00000000      0.00000000      0.00000000
+
+The MECP Optimization has CONVERGED at that geometry !!!
+Goodbye and fly with us again...
+Mon Mar 16 02:59:47 CST 2015
