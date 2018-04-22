@@ -61,3 +61,8 @@ __TIP__: Use `--gaussian_exe` key to specify the Gaussian executable (version) t
 ### Output
 
 All the output files will be written to the working directory and stored in the `JOBS` folder, except the one corresponding to the last step. That folder will also contain a `trajectory.xyz` step with all the intermediate geometries. As in the original MECP, `ReportFile` will list more information about the optimization process
+
+
+### Restarting jobs
+
+If the calculation does not converge before reaching `max_steps`, you might want to extend it. It's simple: take the latest geometry you like (last one is always in the file `geom`, but you can create another if you want), and relaunch `mecpsh --geom <your_geometry>`. Since the `JOBS` folder is automatically renamed to `JOBS1`, `JOBS2`, etc, you won't lose your files.
