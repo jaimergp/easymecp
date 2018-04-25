@@ -7,7 +7,7 @@ import sys
 import pytest
 from mecpy.mecpy import MECPCalculation, temporary_directory
 here = os.path.abspath(os.path.dirname(__file__))
-
+data = os.path.join(here, 'data')
 
 def required_steps(path):
     with open(path) as f:
@@ -17,7 +17,7 @@ def required_steps(path):
     return step
 
 
-@pytest.mark.parametrize("directory", sorted(next(os.walk(os.path.join(here, 'data')))[1]))
+@pytest.mark.parametrize("directory", sorted(next(os.walk(data))[1]))
 def test_mecpsh(directory):
     cwd = os.getcwd()
     original_data = os.path.join(here, 'data', directory)
