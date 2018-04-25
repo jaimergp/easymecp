@@ -88,7 +88,7 @@ class MECPCalculation(object):
                 self._parse_energy = run_path(energy_parser)['parse_energy']
             except KeyError:
                 raise ValueError('External energy parsers must define a `parse_energy` function')
-        elif isinstance(energy_parser, callable):
+        elif callable(energy_parser):
             self._parse_energy = energy_parser
         else:
             try:
