@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-MECPsh
-------
+MECPy
+-----
 
 Simplified Python wrapper around the original MECP Fortran code
 from J. Harvey (2003).
@@ -23,9 +23,9 @@ these 3 or 4 files:
 ** Number of atoms is now inferred from geometry file automatically
 
 These options (and more) can be specified in the command line with the
-appropriate flags (see mecpsh -h for the full list). For example
+appropriate flags (see mecpy -h for the full list). For example
 
-    python mecpsh.py --geom initial_geometry
+    python mecpy.py --geom initial_geometry
 
 If the command gets too long, you can opt to use a config file that
 specifies key-value pairs like this:
@@ -40,6 +40,8 @@ have higher precedence.
 from __future__ import print_function, absolute_import
 from contextlib import contextmanager
 from datetime import datetime
+from distutils.spawn import find_executable
+from runpy import run_path
 from subprocess import call
 from tempfile import mkdtemp
 import argparse
@@ -50,6 +52,10 @@ import shutil
 import sys
 
 
+if sys.version_info[0:2] < (3, 4) and sys.version_info[0:2] != (2, 7):
+    sys.exit('MECPy requires Python 2.7 or 3.4+')
+
+
 class MECPCalculation(object):
 
     OK = 'OK'
@@ -57,15 +63,16 @@ class MECPCalculation(object):
     MAX_ITERATIONS_REACHED = 'MAX_ITERATIONS_REACHED'
 
     def __init__(self, max_steps=50, a_header='Input_Header_A', b_header='Input_Header_B',
-                 geom='geom', footer='footer', gaussian_exe='g09', TDE='5.d-5',
+                 geom='geom', footer='footer', TDE='5.d-5',
                  TDXMax='4.d-3', TDXRMS='2.5d-3', TGMax='7.d-4', TGRMS='5.d-4',
                  energy_parser='dft', FC=os.environ.get('FC', 'gfortran'),
-                 FFLAGS=os.environ.get('FFLAGS', '-O -ffixed-line-length-none'), **kwargs):
+                 FFLAGS=os.environ.get('FFLAGS', '-O -ffixed-line-length-none'),
+                 gaussian_exe=('g16' if find_executable('g16') else 'g09'), **kwargs):
+        self.a_header = _extant_file(a_header, name='a_header')
+        self.b_header = _extant_file(b_header, name='b_header')
+        self.geom = _extant_file(geom, name='geom')
+        self.footer = _extant_file(footer, name='footer', allow_errors=True)
         self.max_steps = max_steps
-        self.a_header = a_header
-        self.b_header = b_header
-        self.geom = geom
-        self.footer = footer
         self.gaussian_exe = gaussian_exe
         self.TDE = TDE
         self.TDXMax = TDXMax
@@ -76,11 +83,19 @@ class MECPCalculation(object):
         self.FFLAGS = FFLAGS
         self.natom = 0
         self.converged_at = None
-        if energy_parser in AVAILABLE_ENERGY_PARSERS:
-            self._parse_energy = getattr(self, '_parse_energy_' + energy_parser)
+        if energy_parser.endswith('.py') and os.path.isfile(energy_parser):
+            try:
+                self._parse_energy = run_path(energy_parser)['parse_energy']
+            except KeyError:
+                raise ValueError('External energy parsers must define a `parse_energy` function')
+        elif isinstance(energy_parser, callable):
+            self._parse_energy = energy_parser
         else:
-            raise ValueError('energy_parser `{}` must be one of <{}>'.format(
-                             energy_parser, ', '.join(AVAILABLE_ENERGY_PARSERS)))
+            try:
+                self._parse_energy = globals()['_parse_energy_' + energy_parser]
+            except KeyError:
+                raise ValueError('energy_parser `{}` must be one of <{}>'.format(
+                                energy_parser, ', '.join(AVAILABLE_ENERGY_PARSERS)))
         with open(geom) as f:
             for line in f:
                 if len(line.split()) == 4:
@@ -138,9 +153,9 @@ class MECPCalculation(object):
                 return self.ERROR
             print('  Launching MECP...')
             try:
-                call([mecp_exe])
+                call([mecp_exe], stdout=sys.stdout, stderr=sys.stderr)
             except Exception as e:
-                print('  ! Error during MECP execution:', type(e), e)
+                print('  ! Error during MECP execution:', e.__class__.__name__, '->', e)
                 self.report('ERROR')
             if os.path.isfile('AddtoReportFile'):
                 with open('AddtoReportFile') as f:
@@ -248,9 +263,10 @@ class MECPCalculation(object):
 
     def run_gaussian(self, inputfile):
         try:
-            call([self.gaussian_exe, inputfile])
-        except:
+            call([self.gaussian_exe, inputfile], stdout=sys.stdout, stderr=sys.stderr)
+        except Exception as e:
             print('  ! Could not run Gaussian job', inputfile)
+            print('  !', e.__class__.__name__, '->', e)
             self.report('ERROR')
             return None, None
         energy = None
@@ -272,30 +288,10 @@ class MECPCalculation(object):
         if len(fields) > 2 and fields[0] == 'Center' and fields[1] == 'Atomic' and fields[2] == 'Forces':
             gradients = []
             next(f), next(f)  # skip two lines
-            for i in range(self.natom):
+            for _ in range(self.natom):
                 line = next(f)
                 gradients.append(line.split()[1:5])
             return gradients
-        return default
-
-    def _parse_energy_dft(self, f, line, fields, default=None):
-        if len(fields) > 4 and fields[0] == 'SCF' and fields[1] == 'Done:':
-            return float(fields[4])
-        return default
-
-    def _parse_energy_mp2(self, f, line, fields, default=None):
-        if len(fields) > 5 and fields[0] == 'E2' and fields[3] == 'EUMP2':
-            return float(fields[5])
-        return default
-
-    def _parse_energy_cis(self, f, line, fields, default=None):
-        if len(fields) > 4 and fields[2] == 'E(CIS)':
-            return float(fields[4])
-        return default
-
-    def _parse_energy_td(self, f, line, fields, default=None):
-        if len(fields) > 4 and fields[2] == 'E(TD-HF/TD-KS)':
-            return float(fields[4])
         return default
 
     def prepare_ab_initio(self, energy_a, energy_b, gradients_a, gradients_b):
@@ -325,17 +321,36 @@ class MECPCalculation(object):
                 print(self.element_number_to_symbol(g, drop_blank=True), file=f)
 
 
-def _parse_cli():
-    p = argparse.ArgumentParser(prog='mecpsh', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('-f', '--inputfile', metavar='FILE',
-        help='Configuration file. Each value must be provided in its own line, with syntax <key>: <value>.')
-    defaults = _get_defaults()
-    for k, v in sorted(defaults.items()):
-        p.add_argument('--'+k, default=v, metavar='VALUE', help='{} (default={!r})'.format(USAGE[k], v))
-    args = p.parse_args()
-    return args
+###
+# Energy parsers
+###
+def _parse_energy_dft(f, line, fields, default=None):
+    if len(fields) > 4 and fields[0] == 'SCF' and fields[1] == 'Done:':
+        return float(fields[4])
+    return default
 
 
+def _parse_energy_mp2(f, line, fields, default=None):
+    if len(fields) > 5 and fields[0] == 'E2' and fields[3] == 'EUMP2':
+        return float(fields[5])
+    return default
+
+
+def _parse_energy_cis(f, line, fields, default=None):
+    if len(fields) > 4 and fields[2] == 'E(CIS)':
+        return float(fields[4])
+    return default
+
+
+def _parse_energy_td(f, line, fields, default=None):
+    if len(fields) > 4 and fields[2] == 'E(TD-HF/TD-KS)':
+        return float(fields[4])
+    return default
+
+
+###
+# Validators
+###
 def _valid_fortran_double(value, key=None):
     try:
         float(value.replace('d', 'e'))
@@ -346,22 +361,24 @@ def _valid_fortran_double(value, key=None):
         return value
 
 
-def main():
-    args = _parse_cli()
-    if args.inputfile:
-        print('Configuration file', args.inputfile, 'has been specified. Ignoring any other arguments!')
-        calc = MECPCalculation.from_conf(args.inputfile)
+def _extant_file(path, name=None, allow_errors=False):
+    """ Verify file exists or report error """
+    if os.path.isfile(path):
+        return path
+    label = '`{}` with path '.format(name) if name is not None else ''
+    skipping = ' Skipping...' if allow_errors else ''
+    msg = 'File {label}{path} is not available!{skipping}'.format(
+          label=label, path=path, skipping=skipping)
+    if allow_errors:
+        print(msg)
+        return path
     else:
-        calc = MECPCalculation(**args.__dict__)
-    result = calc.run()
-    if result == MECPCalculation.OK:
-        print('Success!')
-    elif result == MECPCalculation.ERROR:
-        print('Something failed...')
-    elif result == MECPCalculation.MAX_ITERATIONS_REACHED:
-        print('Calculation did not converge after', calc.max_steps, 'steps...')
+        raise ValueError(msg)
 
 
+###
+# Helpers
+###
 def _get_defaults():
     _defaults = MECPCalculation.__init__.__defaults__
     _ndef = len(_defaults)
@@ -370,7 +387,6 @@ def _get_defaults():
     return dict(zip(_args, _defaults))
 
 
-# From MDTraj
 @contextmanager
 def temporary_directory(enter=True, **kwargs):
     """Create and enter a temporary directory; used as context manager."""
@@ -384,9 +400,46 @@ def temporary_directory(enter=True, **kwargs):
     shutil.rmtree(temp_dir)
 
 
+###
+# App
+###
+def _parse_cli():
+    p = argparse.ArgumentParser(prog='mecpy', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('-f', '--inputfile', metavar='FILE',
+        help='Configuration file. Each value must be provided in its own line, with syntax <key>: <value>.')
+    defaults = _get_defaults()
+    for k, v in sorted(defaults.items()):
+        p.add_argument('--'+k, default=v, metavar='VALUE', help='{} (default={!r})'.format(USAGE[k], v))
+    args = p.parse_args()
+    return args
+
+    
+def main():
+    args = _parse_cli()
+    try:
+        if args.inputfile:
+            print('Configuration file', args.inputfile, 'has been specified. Ignoring any other arguments!')
+            calc = MECPCalculation.from_conf(args.inputfile)
+        else:
+            calc = MECPCalculation(**args.__dict__)
+    except ValueError as e:
+        print('! ERROR:', e)
+        print('         Run mecpy -h (or python mecpy.py -h) for help.')
+        sys.exit()
+    result = calc.run()
+    if result == MECPCalculation.OK:
+        print('Success!')
+    elif result == MECPCalculation.ERROR:
+        print('Something failed...')
+    elif result == MECPCalculation.MAX_ITERATIONS_REACHED:
+        print('Calculation did not converge after', calc.max_steps, 'steps...')
+
+###
+# Constants
+###
 DEFAULTS = _get_defaults()
-AVAILABLE_ENERGY_PARSERS = set([attr[14:] for attr in MECPCalculation.__dict__
-                                if attr.startswith('_parse_energy_')])
+AVAILABLE_ENERGY_PARSERS = set([key[14:] for key in globals()
+                                if key.startswith('_parse_energy_')])
 PROGFILE = """
 Title
 Number of Atoms
@@ -423,7 +476,8 @@ USAGE = {
     'geom': 'File containing the starting system geometry '
             '(element symbols will be converted in atomic numbers automatically)',
     'footer': 'File containing the bottom part of system configuration',
-    'energy_parser': 'Which energy should be parsed: dft, mp2, cis, td.',
+    'energy_parser': 'Which energy should be parsed: dft, mp2, cis, td. It can also be a '
+                     'path to a Python file containing a `parse_energy` function.',
     'gaussian_exe': 'Path to gaussian executable. Compatible versions: g09, g16',
     'TDE': 'Convergence threshold for difference in E. Must be a valid Fortran double!',
     'TDXMax': 'Convergence threshold for max change of X. Must be a valid Fortran double!',

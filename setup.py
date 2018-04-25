@@ -43,7 +43,7 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        mecpsh=mecpy.mecpsh:main
+        mecpy=mecpy.mecpy:main
         '''
     ,
 )

@@ -25,25 +25,25 @@ _For the sake of completeness, I have also included MECPro: a MIT-licensed, Pyth
 
 ## Why?!
 
-The original MECP code requires a rather intricate setup process. For example, the user is expected to manually modify the code and recompile the Fortran binaries for each calculation. My opinion is that it should be easier and that's why I automated the manual steps in a script called `mecpsh`.
+The original MECP code requires a rather intricate setup process. For example, the user is expected to manually modify the code and recompile the Fortran binaries for each calculation. My opinion is that it should be easier and that's why I automated the manual steps in a script called `mecpy`.
 
-During the development of MECPsh (the Python wrapper around MECP), I found about MECPro (a Python-only fork), which I have included here for completeness, in a pip-installable form. The authors claimed reproducibility of the calculations, but I could not locate further evidence, so I also included some unit-tests extracted from ([sobMECP](http://sobereva.com/286)) [WIP].
+During the development of MECPy (the Python wrapper around MECP), I found about MECPro (a Python-only fork), which I have included here for completeness, in a pip-installable form. The authors claimed reproducibility of the calculations, but I could not locate further evidence, so I also included some unit-tests extracted from ([sobMECP](http://sobereva.com/286)) [WIP].
 
 ## Usage
 
-The `mecpy` package includes a self-contained, pure-Python module called `mecpsh` that can be called directly with `python mecpsh.py`. If the package is installed with `pip`, the executable `mecpsh` will also be available. Either way, the `-h` flag will show the usage:
+The `mecpy` package includes a self-contained, pure-Python module called `mecpy` that can be called directly with `python mecpy.py`. If the package is installed with `pip`, the executable `mecpy` will also be available. Either way, the `-h` flag will show the usage:
 
 ```
 # Direct execution
-python mecpsh.py -h
+python mecpy.py -h
 # Only available if installed with pip
-mecpsh -h
+mecpy -h
 ```
 
-All the configuration keys have default values, so, if all the requested files are named like that, all you have to do is run `python mecpsh.py` in the corresponding directory. If custom values are preferred, you can specify them with the appropriate flags OR through a configuration file.
+All the configuration keys have default values, so, if all the requested files are named like that, all you have to do is run `python mecpy.py` in the corresponding directory. If custom values are preferred, you can specify them with the appropriate flags OR through a configuration file.
 
 ```
-python mecpsh.py --geom initial_geometry --FC ifort
+python mecpy.py --geom initial_geometry --FC ifort
 ```
 
 
@@ -54,9 +54,9 @@ python mecpsh.py --geom initial_geometry --FC ifort
 - `geom`: File containing the starting system geometry (element symbols will be converted in atomic numbers automatically). Name can be changed with `--geom`` key.
 - `footer` (optional): File containing the bottom part of system configuration (basis sets, etc). Name can be changed with `--footer` flag.
 
-_More details can be found in the command line help message with `python mecpsh.py -h` or `mecpsh -h`._
+_More details can be found in the command line help message with `python mecpy.py -h` or `mecpy -h`._
 
-__TIP__: Use `--gaussian_exe` key to specify the Gaussian executable (version) to use: `g09` or `g16`. Others might work as well.
+__TIP__: Use `--gaussian_exe` key to specify the Gaussian executable (version) to use: `g09` or `g16`. Others might work as well. If not specified, `mecpy` will use the default value: `g16` if Gaussian 16 is present in `$PATH`; `g09` otherwise. You can also specify absolute paths here, if needed.
 
 ### Output
 
@@ -65,4 +65,4 @@ All the output files will be written to the working directory and stored in the 
 
 ### Restarting jobs
 
-If the calculation does not converge before reaching `max_steps`, you might want to extend it. It's simple: take the latest geometry you like (last one is always in the file `geom`, but you can create another if you want), and relaunch `mecpsh --geom <your_geometry>`. Since the `JOBS` folder is automatically renamed to `JOBS1`, `JOBS2`, etc, you won't lose your files.
+If the calculation does not converge before reaching `max_steps`, you might want to extend it. It's simple: take the latest geometry you like (last one is always in the file `geom`, but you can create another if you want), and relaunch `mecpy --geom <your_geometry>`. Since the `JOBS` folder is automatically renamed to `JOBS1`, `JOBS2`, etc, you won't lose your files.
