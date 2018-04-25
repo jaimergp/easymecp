@@ -195,7 +195,7 @@ class MECPCalculation(object):
         os.chmod('MECP.x', os.stat('MECP.x').st_mode | 0o111)  # make executable
         return './MECP.x'
 
-    def element_symbol_to_number(self, fh, drop_blank=False):
+    def element_symbol_to_number(self, fh, drop_blank=True):
         elements = ELEMENTS
         lines = []
         for line in fh:
@@ -249,13 +249,15 @@ class MECPCalculation(object):
                 contents = a.read()
                 if not step and not os.path.isfile(re.search(r'%chk=(.*)', contents).group(0)):
                     contents = contents.replace('guess(read)', '')
-                f.write(contents)
+                f.write(contents.rstrip())
+            f.write('\n')
             with open(geom) as b:
-                contents = self.element_symbol_to_number(b)
-                f.write(contents)
+                contents = self.element_symbol_to_number(b, drop_blank=True)
+                f.write(contents.rstrip())
+            f.write('\n\n')
             try:
                 with open(footer) as c:
-                    f.write(c.read())
+                    f.write(c.read().lstrip())
             except IOError:
                pass
             f.write('\n\n')  # Gaussian is picky about file endings...
