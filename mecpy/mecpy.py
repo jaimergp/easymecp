@@ -4,6 +4,7 @@
 MECPy
 -----
 
+mecpy v{version}
 By: Jaime Rodríguez-Guerra <@jaimergp>, Ignacio Funes
 
 Simplified Python wrapper around the original MECP Fortran code
@@ -54,7 +55,7 @@ import shutil
 import sys
 
 
-__version__ = '0.0.1'
+__version__ = '0.1'
 
 
 if sys.version_info[0:2] < (3, 4) and sys.version_info[0:2] != (2, 7):
@@ -135,6 +136,7 @@ class MECPCalculation(object):
 
     def run(self):
         # Recompile Fortran code
+        print('Running MECPy v{}...'.format(__version__))
         print('Preparing workspace...')
         self.prepare_workspace()
         print('Compiling MECP for {} atoms...'.format(self.natom))
@@ -411,7 +413,8 @@ def temporary_directory(enter=True, **kwargs):
 # App
 ###
 def _parse_cli():
-    p = argparse.ArgumentParser(prog='mecpy', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p = argparse.ArgumentParser(prog='mecpy', description=__doc__.format(version=__version__),
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--version', action='version', version='%(prog)s v' + __version__)
     p.add_argument('-f', '--inputfile', metavar='FILE',
         help='Configuration file. Each value must be provided in its own line, with syntax <key>: <value>.')
@@ -436,11 +439,12 @@ def main():
         sys.exit()
     result = calc.run()
     if result == MECPCalculation.OK:
-        print('Success!')
+        print('Success! Check ReportFile for results.')
     elif result == MECPCalculation.ERROR:
         print('Something failed...')
     elif result == MECPCalculation.MAX_ITERATIONS_REACHED:
         print('Calculation did not converge after', calc.max_steps, 'steps...')
+
 
 ###
 # Constants

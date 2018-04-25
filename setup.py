@@ -5,6 +5,7 @@ from __future__ import print_function
 from setuptools import setup, find_packages
 import os
 import io
+from mecpy import __version__
 here = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -21,7 +22,7 @@ long_description = read('README.md')
 
 setup(
     name='mecpy',
-    version='0.1',
+    version=__version__,
     url='https://github.com/jaimergp/mecpy',
     license='MIT License',
     author='Jaime RGP',
