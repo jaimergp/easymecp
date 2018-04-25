@@ -4,6 +4,8 @@
 MECPy
 -----
 
+By: Jaime Rodríguez-Guerra <@jaimergp>, Ignacio Funes
+
 Simplified Python wrapper around the original MECP Fortran code
 from J. Harvey (2003).
 
@@ -50,6 +52,9 @@ import re
 import shlex
 import shutil
 import sys
+
+
+__version__ = '0.0.1'
 
 
 if sys.version_info[0:2] < (3, 4) and sys.version_info[0:2] != (2, 7):
@@ -407,6 +412,7 @@ def temporary_directory(enter=True, **kwargs):
 ###
 def _parse_cli():
     p = argparse.ArgumentParser(prog='mecpy', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('--version', action='version', version='%(prog)s v' + __version__)
     p.add_argument('-f', '--inputfile', metavar='FILE',
         help='Configuration file. Each value must be provided in its own line, with syntax <key>: <value>.')
     defaults = _get_defaults()
@@ -496,6 +502,7 @@ MECP_FORTRAN = """
 
 C     New version, Nov. 2003. All gradients converted to Hartree/Ang.
 C     facPp chosen so that inverse Hessian ~ diagonal 0.7 Ang*Ang/Hartree
+C     Packaged, Apr 2018. Jaime RGP.
 
       INTEGER Natom, Nx
       parameter (Natom={NUMATOM})
@@ -773,6 +780,7 @@ C     Av.DeltaX, Max.DeltaX, Av.Grad., Max.Grad., DeltaE
           write (8,*) "      Geometry Optimization of an MECP"
           write (8,*) "      Program: J. N. Harvey, March 1999"
           write (8,*) "        version 2, November 2003"
+          write (8,*) "      MECPy edition, Jaime RG, Apr 2018"
           write (8,*)
           write (8,'(A)') "Initial Geometry:"
           DO I = 1, Natom
