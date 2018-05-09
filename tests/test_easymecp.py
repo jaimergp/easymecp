@@ -5,9 +5,10 @@ import os
 import shutil
 import sys
 import pytest
-from mecpy.mecpy import MECPCalculation, temporary_directory
+from easymecp.easymecp import MECPCalculation, temporary_directory
 here = os.path.abspath(os.path.dirname(__file__))
 data = os.path.join(here, 'data')
+
 
 def required_steps(path):
     with open(path) as f:

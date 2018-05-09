@@ -1,5 +1,0 @@
-#!/bin/sh
-
-export g09root=/fslapps/chem/gaussian
-export GAUSS_EXEDIR=$g09root/g09
-exec $GAUSS_EXEDIR/g09 $*

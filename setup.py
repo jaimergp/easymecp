@@ -5,7 +5,7 @@ from __future__ import print_function
 from setuptools import setup, find_packages
 import os
 import io
-from mecpy import __version__
+from easymecp import __version__
 here = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -21,9 +21,9 @@ def read(*filenames, **kwargs):
 long_description = read('README.md')
 
 setup(
-    name='mecpy',
+    name='easymecp',
     version=__version__,
-    url='https://github.com/jaimergp/mecpy',
+    url='https://github.com/jaimergp/easymecp',
     license='MIT License',
     author='Jaime RGP',
     author_email='jaime.rogue@gmail.com',
@@ -44,7 +44,7 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        mecpy=mecpy.mecpy:main
+        easymecp=easymecp.easymecp:main
         '''
     ,
 )

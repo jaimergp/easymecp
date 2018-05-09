@@ -1,13 +1,13 @@
-# MECPy
+# easyMECP
 
-Python utilities for performing MECP (Minimum Energy Crossing Point) with Gaussian.
+Self-contained Python script for performing MECP (Minimum Energy Crossing Point) with Gaussian.
 
-MECPy provides a Python wrapper around the [original J. N. Harvey's](https://link.springer.com/article/10.1007/s002140050309) Fortran code that greatly simplifies the setup and includes small improvements gathered from other MECP variants ([sobMECP](http://sobereva.com/286)).
+easyMECP provides a single-file, self-contained Python wrapper around the [original J. N. Harvey's](https://link.springer.com/article/10.1007/s002140050309) Fortran code that greatly simplifies the setup and includes small improvements gathered from other MECP variants.
 
-_For the sake of completeness, I have also included MECPro: a MIT-licensed, Python-only fork of MECP, originally developed by [J. Snyder and D. H. Ess at BYU](http://jur.byu.edu/?p=22227), updated so it is pip-installable and unit-testable._
 
 ## Features
 
+- Single-file Python script. No installation required.
 - You don't have to modify the source code anymore. All the setup steps are performed automatically. For example, the number of atoms is inferred from the geometry input.
 - Geometry can be specified with atomic symbols or numbers. The script will take care of the rest.
 - Convergence criteria can be easily modified.
@@ -20,18 +20,16 @@ _For the sake of completeness, I have also included MECPro: a MIT-licensed, Pyth
 
 ## Why?!
 
-The original MECP code requires a rather intricate setup process. For example, the user is expected to manually modify the code and recompile the Fortran binaries for each calculation. My opinion is that it should be easier and that's why I automated the manual steps in a script called `mecpy`.
-
-During the development of MECPy (the Python wrapper around MECP), I found about MECPro (a Python-only fork), which I have included here for completeness, in a pip-installable form. The authors claimed reproducibility of the calculations, but I could not locate further evidence, so I also included some unit-tests extracted from ([sobMECP](http://sobereva.com/286)) [WIP].
+The original MECP code requires a rather intricate setup process. For example, the user is expected to manually modify the code and recompile the Fortran binaries for each calculation. My opinion is that it should be easier and that's why I automated the manual steps in a script called `easymecp`.
 
 ## Installation
 
-If you just want to run a few calculations, simply grab the latest `mecpy.py` script from [here](https://github.com/jaimergp/mecpy/blob/master/mecpy/mecpy.py). 
+If you just want to run a few calculations, simply grab the latest `easymecp.py` script from [here](https://github.com/jaimergp/easymecp/blob/master/easymecp/easymecp.py). 
 
 If you'd like a permanent installation, use `pip` like this:
 
 ```
-pip install https://github.com/jaimergp/mecpy/archive/master.zip
+pip install https://github.com/jaimergp/easymecp/archive/master.zip
 ```
 
 ### Requirements
@@ -43,19 +41,19 @@ pip install https://github.com/jaimergp/mecpy/archive/master.zip
 
 ## Usage
 
-The `mecpy` package includes a self-contained, pure-Python module called `mecpy` that can be called directly with `python mecpy.py`. If the package is installed with `pip`, the executable `mecpy` will also be available. Either way, the `-h` flag will show the usage:
+The `easymecp` package includes a self-contained, pure-Python module called `easymecp` that can be called directly with `python easymecp.py`. If the package is installed with `pip`, the executable `easymecp` will also be available. Either way, the `-h` flag will show the usage:
 
 ```
 # Direct execution
-python mecpy.py -h
+python easymecp.py -h
 # Only available if installed with pip
-mecpy -h
+easymecp -h
 ```
 
-All the configuration keys have default values, so, if all the requested files are named like that, all you have to do is run `python mecpy.py` in the corresponding directory. If custom values are preferred, you can specify them with the appropriate flags OR through a configuration file.
+All the configuration keys have default values, so, if all the requested files are named like that, all you have to do is run `python easymecp.py` in the corresponding directory. If custom values are preferred, you can specify them with the appropriate flags OR through a configuration file.
 
 ```
-python mecpy.py --geom initial_geometry --FC ifort
+python easymecp.py --geom initial_geometry --FC ifort
 ```
 
 ### Required files
@@ -65,9 +63,9 @@ python mecpy.py --geom initial_geometry --FC ifort
 - `geom`: File containing the starting system geometry (element symbols will be converted in atomic numbers automatically). Name can be changed with `--geom`` key.
 - `footer` (optional): File containing the bottom part of system configuration (basis sets, etc). Name can be changed with `--footer` flag.
 
-_More details can be found in the command line help message with `python mecpy.py -h` or `mecpy -h`._
+_More details can be found in the command line help message with `python easymecp.py -h` or `easymecp -h`._
 
-__TIP__: Use `--gaussian_exe` key to specify the Gaussian executable (version) to use: `g09` or `g16`. Others might work as well. If not specified, `mecpy` will use the default value: `g16` if Gaussian 16 is present in `$PATH`; `g09` otherwise. You can also specify absolute paths here, if needed.
+__TIP__: Use `--gaussian_exe` key to specify the Gaussian executable (version) to use: `g09` or `g16`. Others might work as well. If not specified, `easymecp` will use the default value: `g16` if Gaussian 16 is present in `$PATH`; `g09` otherwise. You can also specify absolute paths here, if needed.
 
 
 ### Output
@@ -77,30 +75,37 @@ All the output files will be written to the working directory and stored in the 
 
 ### Examples
 
-Run a MECP calculation providing all files with default names in the same directory as `mecpy.py`:
+Run a MECP calculation providing all files with default names in the same directory as `easymecp.py`:
 
 ```
-python mecpy.py
+python easymecp.py
 ```
 
 Increase the maximum allowed steps:
 
 ```
-python mecpy.py --max_steps 100
+python easymecp.py --max_steps 100
 ```
 
 Less tight TDE convergence criteria (you must use Fortran-style double-precision floats)
 
 ```
-python mecpy.py --TDE 5.d-4
+python easymecp.py --TDE 5.d-4
 ```
 
 Provide a different energy parser (example file in `tests/data/energy.py`; must include a `parse_energy` toplevel function)
 
 ```
-python mecpy.py --energy_parser energy.py
+python easymecp.py --energy_parser energy.py
 ```
 
 ### Restarting jobs
 
-If the calculation does not converge before reaching `max_steps`, you might want to extend it. It's simple: take the latest geometry you like (last one is always in the file `geom`, but you can create another if you want), and relaunch `mecpy --geom <your_geometry>`. Since the `JOBS` folder is automatically renamed to `JOBS1`, `JOBS2`, etc, you won't lose your files.
+If the calculation does not converge before reaching `max_steps`, you might want to extend it. It's simple: take the latest geometry you like (last one is always in the file `geom`, but you can create another if you want), and relaunch `easymecp --geom <your_geometry>`. Since the `JOBS` folder is automatically renamed to `JOBS1`, `JOBS2`, etc, you won't lose your files.
+
+
+# More MECP implementations for Gaussian
+
+* [MECPro](http://jur.byu.edu/?p=22227): A MIT-licensed, Python-only fork of MECP, developed by J. Snyder and D. H. Ess at BYU.
+* [easyMECP](http://www2.chemia.uj.edu.pl/~mradon/easymecp/): Dr. Mariusz Radoń developes a separate, Python-only MECP implementation.
+* [sobMECP](http://sobereva.com/286). Slight modifications to the original MECP Fortran code and shell scripts so it's a bit automated.

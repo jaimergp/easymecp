@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 """
-MECPy
------
+easyMECP
+--------
 
-mecpy v{version}
+easymecp v{version}
 By: Jaime Rodríguez-Guerra <@jaimergp>, Ignacio Funes
 
 Simplified Python wrapper around the original MECP Fortran code
@@ -26,9 +26,9 @@ these 3 or 4 files:
 ** Number of atoms is now inferred from geometry file automatically
 
 These options (and more) can be specified in the command line with the
-appropriate flags (see mecpy -h for the full list). For example
+appropriate flags (see easymecp -h for the full list). For example
 
-    python mecpy.py --geom initial_geometry
+    python easymecp.py --geom initial_geometry
 
 If the command gets too long, you can opt to use a config file that
 specifies key-value pairs like this:
@@ -59,7 +59,7 @@ __version__ = '0.1'
 
 
 if sys.version_info[0:2] < (3, 4) and sys.version_info[0:2] != (2, 7):
-    sys.exit('MECPy requires Python 2.7 or 3.4+')
+    sys.exit('easyMECP requires Python 2.7 or 3.4+')
 
 
 class MECPCalculation(object):
@@ -136,7 +136,7 @@ class MECPCalculation(object):
 
     def run(self):
         # Recompile Fortran code
-        print('Running MECPy v{}...'.format(__version__))
+        print('Running easyMECP v{}...'.format(__version__))
         print('Preparing workspace...')
         self.prepare_workspace()
         print('Compiling MECP for {} atoms...'.format(self.natom))
@@ -413,7 +413,7 @@ def temporary_directory(enter=True, **kwargs):
 # App
 ###
 def _parse_cli():
-    p = argparse.ArgumentParser(prog='mecpy', description=__doc__.format(version=__version__),
+    p = argparse.ArgumentParser(prog='easymecp', description=__doc__.format(version=__version__),
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--version', action='version', version='%(prog)s v' + __version__)
     p.add_argument('-f', '--inputfile', metavar='FILE',
@@ -435,7 +435,7 @@ def main():
             calc = MECPCalculation(**args.__dict__)
     except ValueError as e:
         print('! ERROR:', e)
-        print('         Run mecpy -h (or python mecpy.py -h) for help.')
+        print('         Run easymecp -h (or python easymecp.py -h) for help.')
         sys.exit()
     result = calc.run()
     if result == MECPCalculation.OK:
@@ -784,7 +784,7 @@ C     Av.DeltaX, Max.DeltaX, Av.Grad., Max.Grad., DeltaE
           write (8,*) "      Geometry Optimization of an MECP"
           write (8,*) "      Program: J. N. Harvey, March 1999"
           write (8,*) "        version 2, November 2003"
-          write (8,*) "      MECPy edition, Jaime RG, Apr 2018"
+          write (8,*) "      easyMECP edition, Jaime RG, Apr 2018"
           write (8,*)
           write (8,'(A)') "Initial Geometry:"
           DO I = 1, Natom
