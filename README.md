@@ -24,7 +24,7 @@ The original MECP code requires a rather intricate setup process. For example, t
 
 ## Installation
 
-If you just want to run a few calculations, simply grab the latest `easymecp.py` script from [here](https://github.com/jaimergp/easymecp/blob/master/easymecp/easymecp.py). 
+If you just want to run a few calculations, simply grab the latest `easymecp.py` script from [here](https://github.com/jaimergp/easymecp/blob/master/easymecp/easymecp.py).
 
 If you'd like a permanent installation, use `pip` like this:
 
@@ -107,5 +107,5 @@ If the calculation does not converge before reaching `max_steps`, you might want
 # More MECP implementations for Gaussian
 
 * [MECPro](http://jur.byu.edu/?p=22227): A MIT-licensed, Python-only fork of MECP, developed by J. Snyder and D. H. Ess at BYU.
-* [easyMECP](http://www2.chemia.uj.edu.pl/~mradon/easymecp/): Dr. Mariusz Radoń developes a separate, Python-only MECP implementation.
+* [MECPy](http://www2.chemia.uj.edu.pl/~mradon/mecpy/): Dr. Mariusz Radoń developes a separate, Python-only MECP implementation.
 * [sobMECP](http://sobereva.com/286). Slight modifications to the original MECP Fortran code and shell scripts so it's a bit automated.
