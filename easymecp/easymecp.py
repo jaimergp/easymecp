@@ -41,6 +41,10 @@ have higher precedence.
 """
 
 from __future__ import print_function, absolute_import
+import sys
+if sys.version_info[0:2] < (3, 4) and sys.version_info[0:2] != (2, 7):
+    sys.exit('easyMECP requires Python 2.7 or 3.4+')
+
 from contextlib import contextmanager
 from datetime import datetime
 from distutils.spawn import find_executable
@@ -52,14 +56,9 @@ import os
 import re
 import shlex
 import shutil
-import sys
 
 
 __version__ = '0.1'
-
-
-if sys.version_info[0:2] < (3, 4) and sys.version_info[0:2] != (2, 7):
-    sys.exit('easyMECP requires Python 2.7 or 3.4+')
 
 
 class MECPCalculation(object):
