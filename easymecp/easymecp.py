@@ -451,7 +451,7 @@ def main():
 # Constants
 ###
 DEFAULTS = _get_defaults()
-AVAILABLE_ENERGY_PARSERS = set([key[14:] for key in globals()
+AVAILABLE_ENERGY_PARSERS = set([key[14:] for key in globals().copy()
                                 if key.startswith('_parse_energy_')])
 PROGFILE = """
 Title
