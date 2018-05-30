@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 
 """
 easyMECP
@@ -423,7 +425,7 @@ def _parse_cli():
     args = p.parse_args()
     return args
 
-    
+
 def main():
     args = _parse_cli()
     try:
