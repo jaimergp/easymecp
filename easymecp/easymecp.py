@@ -60,7 +60,7 @@ import shlex
 import shutil
 
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 
 class MECPCalculation(object):
@@ -255,7 +255,9 @@ class MECPCalculation(object):
         with open(name, 'w') as f:
             with open(header) as a:
                 contents = a.read()
-                if not step and not os.path.isfile(re.search(r'%chk=(.*)', contents).group(0)):
+                chk = re.search(r'^%chk=(.*)$', contents, flags=re.IGNORECASE|re.MULTILINE)
+                chk_exists = chk and chk.group(1) and os.path.isfile(chk.group(1).strip())
+                if not step and not chk_exists:
                     contents = contents.replace('guess(read)', '')
                 f.write(contents.rstrip())
             f.write('\n')
