@@ -18,8 +18,8 @@ edition of files** and shell files.
 * gfortran or equivalent is still required behind the scenes
 ** Number of atoms is now inferred from geometry file automatically
 
-Recommended workflow
-....................
+Recommended workflow (-f)
+.........................
 
 The MECP program expects two different input files, one for each
 multiplicity. However, they rarely differ in more than that. EasyMECP
@@ -48,7 +48,10 @@ will be scanned for possible config values if they match this syntax
     ! easymecp TGMax = 7.d-4
 
 Please note that if you need ExtraOverlays, this method would not work.
-Use the original MECP workflow (explaiend below) in that case.
+Use the original MECP workflow (explained below) in that case.
+
+Individual files for the sections will be automatically generated, so you
+can use the compatibility mode for easier restarts.
 
 Compatibility mode
 ..................
@@ -107,7 +110,7 @@ import shlex
 import shutil
 
 
-__version__ = '0.1.2'
+__version__ = '0.2.0'
 
 
 class MECPCalculation(object):
@@ -166,11 +169,11 @@ class MECPCalculation(object):
                 line = line.strip()
                 if not line or line.startswith('#') or ':' not in line:
                     continue
-                fields = line.split(':')
-                if len(fields) < 2:
+                fields = line.split(':', 1)
+                if len(fields) < 2 or not fields[1].strip():
                     print('Malformed line #{}: {}'.format(i, line))
                     sys.exit()
-                key, value = fields[0], ':'.join(fields[1:])
+                key, value = fields[0], fields[1].strip()
                 if key not in DEFAULTS:
                     print('! Skipping key `{}` (not recognized)'.format(key))
                     continue
@@ -246,13 +249,13 @@ class MECPCalculation(object):
         d['b_header'] = '_header_b'
         d['geom'] = '_initial_geom'
         d['footer'] = '_footer'
-        for filepath, lines in (('_header_a', header_a),
-                                ('_header_b', header_b),
-                                ('_initial_geom', geom),
-                                ('_footer', footer)):
+        for filepath, lines in (('_header_a', header_a), ('_header_b', header_b),
+                                ('_initial_geom', geom), ('_footer', footer)):
             if lines:
                 with open(filepath, 'w') as f:
                     f.writelines(lines)
+        with open(os.path.splitext(os.path.basename(path))[0] + '.conf', 'w') as f:
+            f.write('\n'.join('{}: {}'.format(k, v) for (k,v) in d.items()))
 
         return cls(**d)
 
@@ -544,7 +547,8 @@ def _parse_cli():
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('-V', '--version', action='version', version='%(prog)s v' + __version__)
     p.add_argument('-f', '--inputfile', metavar='INPUTFILE', help='Initialize from Gaussian input file. '
-    'Divergent options can be specified with curly braces at any time: {A,B}.')
+    'Divergent options can be specified with curly braces at any time: {A,B}. Additional flags '
+    'must be specified in comment lines (read above).')
     p.add_argument('--conf', metavar='CONFFILE', help='Initialize from configuration file. '
                    'Each value must be provided in its own line, with syntax <key>: <value>.')
     defaults = _get_defaults()
@@ -564,7 +568,7 @@ def main():
         elif args.conf:
             print('Configuration file', args.conf, 'has been specified. '
                   'Ignoring any other arguments!')
-            calc = MECPCalculation.from_conf(args.inputfile)
+            calc = MECPCalculation.from_conf(args.conf)
         else:
             calc = MECPCalculation(**args.__dict__)
     except ValueError as e:
