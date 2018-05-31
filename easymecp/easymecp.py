@@ -70,7 +70,7 @@ class MECPCalculation(object):
     MAX_ITERATIONS_REACHED = 'MAX_ITERATIONS_REACHED'
 
     def __init__(self, max_steps=50, a_header='Input_Header_A', b_header='Input_Header_B',
-                 geom='geom', footer='footer', TDE='5.d-5',
+                 geom='geom', footer='footer', natom=0, TDE='5.d-5',
                  TDXMax='4.d-3', TDXRMS='2.5d-3', TGMax='7.d-4', TGRMS='5.d-4',
                  energy_parser='dft', FC=os.environ.get('FC', 'gfortran'),
                  FFLAGS=os.environ.get('FFLAGS', '-O -ffixed-line-length-none'),
@@ -88,7 +88,7 @@ class MECPCalculation(object):
         self.TGRMS = TGRMS
         self.FC = FC
         self.FFLAGS = FFLAGS
-        self.natom = 0
+        self.natom = natom
         self.converged_at = None
         if energy_parser.endswith('.py') and os.path.isfile(energy_parser):
             try:
@@ -103,9 +103,12 @@ class MECPCalculation(object):
             except KeyError:
                 raise ValueError('energy_parser `{}` must be one of <{}>'.format(
                                 energy_parser, ', '.join(AVAILABLE_ENERGY_PARSERS)))
+        if not natom:
         with open(geom) as f:
             for line in f:
-                if len(line.split()) == 4:
+                    if line.startswith('!'):
+                        continue
+                    elif len(line.split()) >= 4:
                     self.natom +=1
 
     @classmethod
@@ -488,6 +491,7 @@ ELEMENTS = {
 REVERSE_ELEMENTS = dict((v, k) for (k, v) in ELEMENTS.items())
 USAGE = {
     'max_steps': 'Number of iterations to perform until stop or convergence',
+    'natom': 'If easymecp cannot detect number of atoms automatically, override with this option',
     'a_header': 'File containing the top part of system configuration with multiplicity A',
     'b_header': 'File containing the top part of system configuration with multiplicity B',
     'geom': 'File containing the starting system geometry '
