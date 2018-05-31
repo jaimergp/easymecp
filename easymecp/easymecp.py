@@ -51,7 +51,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from distutils.spawn import find_executable
 from runpy import run_path
-from subprocess import call
+from subprocess import call, SubprocessError
 from tempfile import mkdtemp
 import argparse
 import os
@@ -161,7 +161,9 @@ class MECPCalculation(object):
                 return self.ERROR
             print('  Launching MECP...')
             try:
-                call([mecp_exe], stdout=sys.stdout, stderr=sys.stderr)
+                retcode = call([mecp_exe], stdout=sys.stdout, stderr=sys.stderr)
+                if retcode:
+                    raise SubprocessError('MECP returned code {}'.format(retcode))
             except Exception as e:
                 print('  ! Error during MECP execution:', e.__class__.__name__, '->', e)
                 self.report('ERROR')
