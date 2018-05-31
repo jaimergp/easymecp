@@ -6,26 +6,66 @@
 easyMECP
 --------
 
-easymecp v{version}
+easymecp v<VERSION>
 By: Jaime Rodríguez-Guerra <@jaimergp>, Ignacio Funes
 
 Simplified Python wrapper around the original MECP Fortran code
 from J. Harvey (2003).
 
 It still uses the same Fortran code*, but saves the hassle of manual
-edition of files** and shell files. Now, you only* need to provide
-these 3 or 4 files:
-
-- `Input_Header_A`: top lines (or whatever name you choose
-   with --header_a)
-- `Input_Header_B`: top lines (or whatever name you choose
-   with --header_B)
-- `geom`: starting geometry (choose another name with --geom)
-- `footer`: bottom contents (optional, choose another name
-   with --footer)
+edition of files** and shell files.
 
 * gfortran or equivalent is still required behind the scenes
 ** Number of atoms is now inferred from geometry file automatically
+
+Recommended workflow
+....................
+
+The MECP program expects two different input files, one for each
+multiplicity. However, they rarely differ in more than that. EasyMECP
+supports reading a single Gaussian input file with
+
+    python easymecp.py -f system.gjf
+
+This file is a normal Gaussian input file, except that the divergent
+values (multiplicity, chk and title, usually) must be surrounded by
+curly braces and comma-separated (no spaces).
+
+    %mem=60GB
+    %nproc=16
+    %chk={A,B}.chk
+    #n PBE1PBE/genecp force guess(read)
+
+    {Singlet,Triplet} State
+
+    1 {1,3}
+
+Comment lines (normally at the top, but can be anywhere in the file)
+will be scanned for possible config values if they match this syntax
+(semicolon can be omitted, spaces are not required around equal sign):
+
+    ! easymecp: max_steps=50
+    ! easymecp TGMax = 7.d-4
+
+Please note that if you need ExtraOverlays, this method would not work.
+Use the original MECP workflow (explaiend below) in that case.
+
+Compatibility mode
+..................
+
+If you prefer to use the original MECP workflow, you can also specify
+individual files:
+
+- `Input_Header_A`: Input lines before geometry (route, %-lines, title, charge,
+  and spin for multiplicity A) . You can specify a custom filename with
+  --header_a flag.
+- `Input_Header_B`: Input lines before geometry (route, %-lines, title, charge,
+  and spin for multiplicity B) . You can specify a custom filename with
+  --header_b flag.
+- `geom`: Initial geometry (choose another name with --geom)
+- `footer`: bottom contents (basis sets, modredundant, etc). Choose another name
+   with --footer, if desired.
+
 
 These options (and more) can be specified in the command line with the
 appropriate flags (see easymecp -h for the full list). For example
@@ -38,8 +78,15 @@ specifies key-value pairs like this:
     geom: initial_geometry
     footer: filetail
 
-Command line arguments and config files CANNOT be mixed. Config files
-have higher precedence.
+And them have it called like this:
+
+    python easymecp.py --conf my.conf
+
+Command line arguments, input and config files CANNOT be mixed. Input files
+have higher precedence over config files, and this one over command-line arguments.
+
+    -f > --conf > anything else
+
 """
 
 from __future__ import print_function, absolute_import
@@ -104,12 +151,12 @@ class MECPCalculation(object):
                 raise ValueError('energy_parser `{}` must be one of <{}>'.format(
                                 energy_parser, ', '.join(AVAILABLE_ENERGY_PARSERS)))
         if not natom:
-        with open(geom) as f:
-            for line in f:
+            with open(geom) as f:
+                for line in f:
                     if line.startswith('!'):
                         continue
                     elif len(line.split()) >= 4:
-                    self.natom +=1
+                        self.natom +=1
 
     @classmethod
     def from_conf(cls, path):
@@ -136,6 +183,77 @@ class MECPCalculation(object):
                         print('! `{}` file with path `{}` not available!'.format(key, value))
                         sys.exit()
                 d[key] = value
+        return cls(**d)
+
+    @classmethod
+    def from_gaussian_input_file(cls, path):
+        def _process_header_line(line):
+            match = re.search(r'{(.*),(.*)}', line)
+            if match:
+                return (line.replace(match.group(0), match.group(1)),
+                        line.replace(match.group(0), match.group(2)))
+            return line, line
+
+        d = _get_defaults()
+        section = 0
+        header_a, header_b, geom, footer = [], [], None, []
+        # Parse Gaussian input files into header(s), geometry and footer
+        with open(path) as f:
+            for line in f:
+                # Detect sections
+                if not line.strip():
+                    section += 1
+
+                # Assign lines to sections
+                # <HEADER>
+                if section <= 1:
+                    line_a, line_b = _process_header_line(line)
+                    header_a.append(line_a)
+                    header_b.append(line_b)
+                elif section == 2:
+                    if not line.strip():
+                        header_a.append(line)
+                        header_b.append(line)
+                    elif geom is None:
+                        line_a, line_b = _process_header_line(line)
+                        header_a.append(line_a)
+                        header_b.append(line_b)
+                        geom = []
+                # </HEADER>
+                # <GEOM>
+                    else:
+                        # Everything above is part of the header
+                        geom.append(line)
+                # </GEOM>
+                # <FOOTER>
+                elif section >= 3:
+                    footer.append(line)
+                #</FOOTER>
+
+                # Detect special comments
+                if line.startswith('!'):
+                    match = re.search(r'^! easymecp:?\s+(\S+)\s*=(\S+)', line)
+                    if match:
+                        key = match.group(1)
+                        value = match.group(2)
+                        if key == 'max_steps':
+                            d[key] = int(value)
+                        elif key in ('TDE', 'TDXMax', 'TDXRMS', 'TGMax', 'TGRMS'):
+                            d[key] = _valid_fortran_double(value, key)
+
+        # Write temporary files
+        d['a_header'] = '_header_a'
+        d['b_header'] = '_header_b'
+        d['geom'] = '_initial_geom'
+        d['footer'] = '_footer'
+        for filepath, lines in (('_header_a', header_a),
+                                ('_header_b', header_b),
+                                ('_initial_geom', geom),
+                                ('_footer', footer)):
+            if lines:
+                with open(filepath, 'w') as f:
+                    f.writelines(lines)
+
         return cls(**d)
 
     def run(self):
@@ -421,11 +539,14 @@ def temporary_directory(enter=True, **kwargs):
 # App
 ###
 def _parse_cli():
-    p = argparse.ArgumentParser(prog='easymecp', description=__doc__.format(version=__version__),
+    description = __doc__.replace('<VERSION>', __version__)
+    p = argparse.ArgumentParser(prog='easymecp', description=description,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--version', action='version', version='%(prog)s v' + __version__)
-    p.add_argument('-f', '--inputfile', metavar='FILE',
-        help='Configuration file. Each value must be provided in its own line, with syntax <key>: <value>.')
+    p.add_argument('-V', '--version', action='version', version='%(prog)s v' + __version__)
+    p.add_argument('-f', '--inputfile', metavar='INPUTFILE', help='Initialize from Gaussian input file. '
+    'Divergent options can be specified with curly braces at any time: {A,B}.')
+    p.add_argument('--conf', metavar='CONFFILE', help='Initialize from configuration file. '
+                   'Each value must be provided in its own line, with syntax <key>: <value>.')
     defaults = _get_defaults()
     for k, v in sorted(defaults.items()):
         p.add_argument('--'+k, default=v, metavar='VALUE', help='{} (default={!r})'.format(USAGE[k], v))
@@ -437,7 +558,12 @@ def main():
     args = _parse_cli()
     try:
         if args.inputfile:
-            print('Configuration file', args.inputfile, 'has been specified. Ignoring any other arguments!')
+            print('Gaussian input file', args.inputfile, 'has been specified. '
+                  'Ignoring any other arguments!')
+            calc = MECPCalculation.from_gaussian_input_file(args.inputfile)
+        elif args.conf:
+            print('Configuration file', args.conf, 'has been specified. '
+                  'Ignoring any other arguments!')
             calc = MECPCalculation.from_conf(args.inputfile)
         else:
             calc = MECPCalculation(**args.__dict__)
@@ -449,7 +575,7 @@ def main():
     if result == MECPCalculation.OK:
         print('Success! Check ReportFile for results.')
     elif result == MECPCalculation.ERROR:
-        print('Something failed...')
+        print('Something failed... Check Gaussian outputs and/or ReportFile.')
     elif result == MECPCalculation.MAX_ITERATIONS_REACHED:
         print('Calculation did not converge after', calc.max_steps, 'steps...')
 
@@ -793,7 +919,7 @@ C     Av.DeltaX, Max.DeltaX, Av.Grad., Max.Grad., DeltaE
           write (8,*) "      Geometry Optimization of an MECP"
           write (8,*) "      Program: J. N. Harvey, March 1999"
           write (8,*) "        version 2, November 2003"
-          write (8,*) "      easyMECP edition, Jaime RG, Apr 2018"
+          write (8,*) "      easyMECP: J. RG. Pedregal, May 2018"
           write (8,*)
           write (8,'(A)') "Initial Geometry:"
           DO I = 1, Natom
