@@ -352,7 +352,7 @@ class MECPCalculation(object):
             fields = line.split()
             if len(fields) > 3:
                 if fields[0].isdigit():
-                    symbol = elements.get(fields[0], 'LP')
+                    symbol = elements.get(int(fields[0]), 'LP')
                     line = line.replace(fields[0], symbol, 1)
             lines.append(line)
         return ''.join(lines)
