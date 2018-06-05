@@ -1,7 +1,7 @@
 %mem=6GB
 %nproc=4
 %chk=A.chk
-#n B3LYP/genecp force guess(read)
+#n B3LYP/genecp force guess=read
 
 First State
 

@@ -17,6 +17,7 @@ edition of files** and shell files.
 
 * gfortran or equivalent is still required behind the scenes
 ** Number of atoms is now inferred from geometry file automatically
+   Threshold values are parameterized and configurable in the CLI.
 
 Recommended workflow (-f)
 .........................
@@ -379,10 +380,8 @@ class MECPCalculation(object):
         with open(name, 'w') as f:
             with open(header) as a:
                 contents = a.read()
-                chk = re.search(r'^%chk=(.*)$', contents, flags=re.IGNORECASE|re.MULTILINE)
-                chk_exists = chk and chk.group(1) and os.path.isfile(chk.group(1).strip())
-                if not step and not chk_exists:
-                    contents = contents.replace('guess(read)', '')
+                if not step:
+                    contents = self._check_guess_read(contents)
                 f.write(contents.rstrip())
             f.write('\n')
             with open(geom) as b:
@@ -396,6 +395,25 @@ class MECPCalculation(object):
                pass
             f.write('\n\n')  # Gaussian is picky about file endings...
         return name
+
+    def _check_guess_read(self, contents):
+        """
+        Some jobs might include guess=read options to use the chk files, but
+        the first job might not have any chk available yet. We have to get rid
+        of any potential guess=read keywords in the header as a workaround.
+        """
+        chk = re.search(r'^%chk=(.*)$', contents, flags=re.IGNORECASE|re.MULTILINE)
+        chk_exists = chk and chk.group(1) and os.path.isfile(chk.group(1).strip())
+        if not chk_exists:
+            guess = re.search(r'^#.*(guess[=(]{1,2}([^\s)]*)\)?)', contents,
+                                flags=re.IGNORECASE|re.MULTILINE)
+            if guess and guess.group(2):  # if 'read' is in guess options
+                guess_options = [f for f in guess.group(2).split(',') if f.lower().strip() != 'read']
+                if guess_options: # if there were more options besides 'read', keep them
+                    contents = contents.replace(guess.group(2), ','.join(guess_options))
+                else: # if 'read' was the only guess option, remove guess altogether
+                    contents = contents.replace(guess.group(1), '')
+        return contents
 
     def run_gaussian(self, inputfile):
         try:
