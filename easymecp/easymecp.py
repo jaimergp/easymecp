@@ -116,32 +116,68 @@ __version__ = '0.2.2'
 
 class MECPCalculation(object):
 
+    """
+    This class provides a Python interface to perform MECP calculations
+    with Gaussian and Harvey's MECP.x Fortran program.
+
+    Its usage mimics the original implementation; ie, Gaussian input files
+    must be fragmented into header(s), geometry and footer. Magic numbers
+    in the original Fortran source code has been parameterized and can
+    be customized at initialization.
+
+    For convenience, a single file mode is also available through
+    ``MECPCalculation.from_gaussian_input_file`` class method.
+
+    Once instantiated, ``run()`` will take care of everything.
+
+    Parameters
+    ----------
+
+    Check ``USAGE`` global dict defined down this module.
+
+    Examples
+    --------
+
+    With single file interface, arguments can be inserted inside the
+    input file itself (with ``! easymecp: `` commments) or as keyword
+    arguments. Method keywords will override those in the file.
+
+    >>> mecp = MECPCalculation.from_gaussian_input_file('input.gjf')
+    >>> mecp.run()
+
+    With file fragments (original MECP workflow):
+
+    >>> mecp = MECPCalculation(a_header='singlet.header', b_header='triplet.header',
+                               geom='initial_geometry.xyz', footer=None, max_steps=100)
+    >>> mecp.run
+    """
+
     OK = 'OK'
     ERROR = 'ERROR'
     MAX_ITERATIONS_REACHED = 'MAX_ITERATIONS_REACHED'
 
     def __init__(self, max_steps=50, a_header='Input_Header_A', b_header='Input_Header_B',
-                 geom='geom', footer='footer', natom=0, TDE='5.d-5',
+                 geom='geom', footer='footer', with_freq=False, natom=0, TDE='5.d-5',
                  TDXMax='4.d-3', TDXRMS='2.5d-3', TGMax='7.d-4', TGRMS='5.d-4',
                  energy_parser='dft', FC=os.environ.get('FC', 'gfortran'),
                  FFLAGS=os.environ.get('FFLAGS', '-O -ffixed-line-length-none'),
                  gaussian_exe=('g16' if find_executable('g16') else 'g09'), **kwargs):
-        self.a_header = _extant_file(a_header, name='a_header')
-        self.b_header = _extant_file(b_header, name='b_header')
-        self.geom = _extant_file(geom, name='geom')
-        self.footer = _extant_file(footer, name='footer', allow_errors=True)
-        self.max_steps = max_steps
+        self.a_header = extant_file(a_header, name='a_header')
+        self.b_header = extant_file(b_header, name='b_header')
+        self.geom = extant_file(geom, name='geom')
+        self.footer = extant_file(footer, name='footer', allow_errors=True)
+        self.max_steps = int(max_steps)
+        self.with_freq = with_freq
         self.gaussian_exe = gaussian_exe
-        self.TDE = TDE
-        self.TDXMax = TDXMax
-        self.TDXRMS = TDXRMS
-        self.TGMax = TGMax
-        self.TGRMS = TGRMS
+        self.TDE = fortran_double(TDE)
+        self.TDXMax = fortran_double(TDXMax)
+        self.TDXRMS = fortran_double(TDXRMS)
+        self.TGMax = fortran_double(TGMax)
+        self.TGRMS = fortran_double(TGRMS)
         self.FC = FC
         self.FFLAGS = FFLAGS
         self.natom = natom
         self.converged_at = None
-
 
         if energy_parser.endswith('.py') and os.path.isfile(energy_parser):
             try:
@@ -171,8 +207,25 @@ class MECPCalculation(object):
             self.jobsdir = 'JOBS{}'.format(i)
         os.makedirs(self.jobsdir)
 
+        self.mecp_exe = self.compile_fortran()
+
     @classmethod
     def from_conf(cls, path, **kw):
+        """
+        Initialize class from a configuration file that lists all the arguments
+        with ``key: value`` syntax. Additional key-value pairs provided
+        will override those in the file.
+
+        Parameters
+        ----------
+        path : str
+            Path to the configuration file
+
+        Returns
+        -------
+        mecp : MECPCalculation
+            Fully initialized instance
+        """
         d = _get_defaults()
         with open(path) as f:
             for i, line in enumerate(f, 1):
@@ -190,7 +243,7 @@ class MECPCalculation(object):
                 if key in ('natom', 'max_steps'):
                     value = int(value)
                 elif key in ('TDE', 'TDXMax', 'TDXRMS', 'TGMax', 'TGRMS'):
-                    value = _valid_fortran_double(value, key)
+                    value = fortran_double(value, key)
                 elif key in ('a_header', 'b_header', 'footer', 'geom'):
                     if not os.path.isfile(value):
                         print('! `{}` file with path `{}` not available!'.format(key, value))
@@ -201,6 +254,53 @@ class MECPCalculation(object):
 
     @classmethod
     def from_gaussian_input_file(cls, path, **kw):
+        """
+        Initializes a MECPCalculation instance from a single Gaussian input file.
+
+        Additional keyword arguments supplied will override those in the file.
+
+        Parameters
+        ----------
+        path : str
+            Path to Gaussian input file. Divergent values between multiplicity states
+            must be comma-separated and surrounded by curly braces. Class arguments
+            can be specified with special Gaussian comments like ``! easymecp: key=value``.
+
+        Returns
+        -------
+        mecp : MECPCalculation
+            Fully initialized instance
+
+        Examples
+        --------
+
+        A short input file should be like this::
+
+            ! easymecp: max_steps=100
+            %mem=6GB
+            %nproc=4
+            %chk={singlet,triplet}.chk
+            #n B3LYP/6-31G** force guess(read)
+
+            {First,Second} State
+
+            1 {1,3}
+            6    0.00000000    1.29390795    0.00000000
+            6    1.26894294    0.69491769    0.00000000
+            6    1.25319073   -0.68704191    0.00000000
+            6    0.00000000   -1.37652121    0.00000000
+            6   -1.25319073   -0.68704191    0.00000000
+            6   -1.26894294    0.69491769    0.00000000
+            1    2.18616903    1.27569862    0.00000000
+            1    2.18025862   -1.25246238    0.00000000
+            1    0.00000000   -2.46323577    0.00000000
+            1   -2.18025862   -1.25246238    0.00000000
+            1   -2.18616903    1.27569862    0.00000000
+
+        Note how the first line is a special comment that specifies the maximum number of steps.
+        Values that would differ between both spin states are specified with curly braces. Namely,
+        the name of the ``.chk`` file, the first word in the title card, and the multiplicity itself.
+        """
         def _process_header_line(line):
             match = re.search(r'{(.*),(.*)}', line)
             if match:
@@ -252,8 +352,10 @@ class MECPCalculation(object):
                         value = match.group(2)
                         if key == 'max_steps':
                             d[key] = int(value)
+                        elif key == 'with_freq':
+                            d[key] = value.lower() in ('true', 'yes', 'y')
                         elif key in ('TDE', 'TDXMax', 'TDXRMS', 'TGMax', 'TGRMS'):
-                            d[key] = _valid_fortran_double(value, key)
+                            d[key] = fortran_double(value, key)
 
         # Write temporary files
         d['a_header'] = '_header_a'
@@ -269,63 +371,25 @@ class MECPCalculation(object):
             f.write('\n'.join('{}: {}'.format(k, v) for (k,v) in d.items()))
 
         # If additional keywords are passed to this classmethod, override infile ones.
-        d.update(kw)
+        d.update(**kw)
+        print(*d.items(), sep='\n')
         return cls(**d)
 
-    def run(self):
-        # Recompile Fortran code
-        print('Running easyMECP v{}...'.format(__version__))
-        print('Preparing workspace...')
-        self.prepare_workspace()
-        print('Compiling MECP for {} atoms...'.format(self.natom))
-        mecp_exe = self.compile_fortran()
-        geom = self.geom
-
-        for i in range(self.max_steps):
-            # First, compute and parse Gaussian Jobs
-            print('Running step #{}...'.format(i))
-            self.add_trajectory_step(geom, step=i)
-
-            print('  Launching Gaussian job for file A...')
-            input_a = self.prepare_gaussian(self.a_header, geom, self.footer, label='A', step=i)
-            energy_a, gradients_a = self.run_gaussian(input_a)
-            print('  Launching Gaussian job for file B...')
-            input_b = self.prepare_gaussian(self.b_header, geom, self.footer, label='B', step=i)
-            energy_b, gradients_b = self.run_gaussian(input_b)
-
-            # Second, run MECP
-            if not self.prepare_ab_initio(energy_a, energy_b, gradients_a, gradients_b):
-                return self.ERROR
-            print('  Launching MECP...')
-            try:
-                retcode = call([mecp_exe], stdout=sys.stdout, stderr=sys.stderr)
-                if retcode:
-                    raise SubprocessError('MECP returned code {}'.format(retcode))
-            except Exception as e:
-                print('  ! Error during MECP execution:', e.__class__.__name__, '->', e)
-                self.report('ERROR')
-            if os.path.isfile('AddtoReportFile'):
-                with open('AddtoReportFile') as f:
-                    self.report(f.read())
-                os.remove('AddtoReportFile')
-
-            # Third, check results in this iteration
-            with open('ReportFile') as f:
-                for line in f:
-                    if 'CONVERGED' in line:
-                        print('  MECP optimization has converged at Step', i)
-                        self.converged_at = i
-                        return self.OK
-                    if 'ERROR' in line:
-                        print('  An error ocurred!')
-                        return self.ERROR
-            # Keep going! Next iteration will use geom autogenerated by MECP.x
-            geom = 'geom'
-            print()
-
-        return self.MAX_ITERATIONS_REACHED
-
     def compile_fortran(self):
+        """
+        EasyMECP still uses the Fortran MECP searcher behind the scenes, but saves you
+        the hassle of manually recompiling the code everytime the number of atoms changes.
+        This function takes care of that.
+
+        The compiler binary and its flags can be specified at initialization with ``FC``
+        and ``FFLAGS``, respectively. Number of atoms at threshold values for convergence
+        too.
+
+        Returns
+        -------
+        path : str
+            Path to the freshly compiled Fortran program (``./MECP.x``)
+        """
         with temporary_directory(enter=False) as tmp:
             # Patch source code
             code = MECP_FORTRAN.format(NUMATOM=self.natom, TDE=self.TDE, TDXMax=self.TDXMax,
@@ -338,37 +402,56 @@ class MECPCalculation(object):
         os.chmod('MECP.x', os.stat('MECP.x').st_mode | 0o111)  # make executable
         return './MECP.x'
 
-    def element_symbol_to_number(self, fh, drop_blank=True):
-        elements = ELEMENTS
-        lines = []
-        for line in fh:
-            if drop_blank and not line.strip():
-                continue
-            fields = line.split()
-            if len(fields) > 3:
-                if not fields[0].isdigit():
-                    number = elements.get(fields[0].title(), -1)
-                    line = line.replace(fields[0], str(number))
-            lines.append(line)
-        return ''.join(lines)
+    def run(self):
+        """
+        Main method of the class. Takes care of initializing the workspace as expected by MECP.x
+        and controls the iterations and convergence criteria.
 
-    def element_number_to_symbol(self, fh, drop_blank=False):
-        elements = REVERSE_ELEMENTS
-        lines = []
-        for line in fh:
-            if drop_blank and not line.strip():
-                continue
-            fields = line.split()
-            if len(fields) > 3:
-                if fields[0].isdigit():
-                    symbol = elements.get(int(fields[0]), 'LP')
-                    line = line.replace(fields[0], symbol, 1)
-            lines.append(line)
-        return ''.join(lines)
+        Returns
+        -------
+        'OK' : str
+            Calculation converged and finished correctly.
+        'ERROR' : str
+            Calculation could not end successfully.
+        'MAX_ITERATIONS_REACHED' : str
+            Calculation did not converge in the allowed number of iterations.
+        """
+        # Recompile Fortran code
+        print('Running easyMECP v{}...'.format(__version__))
+        print('Preparing workspace...')
+        self.prepare_workspace()
+        print('Compiling MECP for {} atoms...'.format(self.natom))
+
+        geom = self.geom
+        for i in range(self.max_steps):
+            result = self.do_iteration(geom, i)
+            if result is self.ERROR:
+                return self.ERROR
+
+            check = self.check_current_iteration()
+            if check is self.OK:
+                print('  MECP optimization has converged at Step', i)
+                self.converged_at = i
+                if self.with_freq:
+                    return self.do_freq(geom)
+                return self.OK
+            elif check is self.ERROR:
+                print('  An error ocurred!')
+                return self.ERROR
+            # Keep going! Next iteration will use geom autogenerated by MECP.x
+            geom = 'geom'
+            print()
+
+        return self.MAX_ITERATIONS_REACHED
 
     def prepare_workspace(self):
+        """
+        Prepare some of the files expected by MECP.x in its first run,
+        ProgFile and ReportFile.
+
+        """
         with open(self.geom) as f:
-            geometry = self.element_symbol_to_number(f)
+            geometry = element_symbol_to_number(f)
         with open('ProgFile', 'w') as f:
             f.seek(0)
             f.write(PROGFILE.format(natom=self.natom, geometry=geometry))
@@ -378,88 +461,129 @@ class MECPCalculation(object):
             f.write('{}\n'.format(datetime.now()))
             f.truncate()
 
-    def prepare_gaussian(self, header, geom, footer, label='A', step=0):
-        name = 'Job{}_{}.gjf'.format(step, label)
-        with open(name, 'w') as f:
-            with open(header) as a:
-                contents = a.read()
-                if not step:
-                    contents = self._check_guess_read(contents)
-                f.write(contents.rstrip())
-            f.write('\n')
-            with open(geom) as b:
-                contents = self.element_symbol_to_number(b, drop_blank=True)
-                f.write(contents.rstrip())
-            f.write('\n\n')
-            try:
-                with open(footer) as c:
-                    f.write(c.read().lstrip())
-            except IOError:
-               pass
-            f.write('\n\n')  # Gaussian is picky about file endings...
-        return name
+        self.add_trajectory_step(self.geom, step=0)
 
-    def _check_guess_read(self, contents):
+    def do_iteration(self, geom, step):
         """
-        Some jobs might include guess=read options to use the chk files, but
-        the first job might not have any chk available yet. We have to get rid
-        of any potential guess=read keywords in the header as a workaround.
-        """
-        chk = re.search(r'^%chk=(.*)$', contents, flags=re.IGNORECASE|re.MULTILINE)
-        chk_exists = chk and chk.group(1) and os.path.isfile(chk.group(1).strip())
-        if not chk_exists:
-            guess = re.search(r'^#.*(guess[=(]{1,2}([^\s)]*)\)?)', contents,
-                                flags=re.IGNORECASE|re.MULTILINE)
-            if guess and guess.group(2):  # if 'read' is in guess options
-                guess_options = [f for f in guess.group(2).split(',') if f.lower().strip() != 'read']
-                if guess_options: # if there were more options besides 'read', keep them
-                    contents = contents.replace(guess.group(2), ','.join(guess_options))
-                else: # if 'read' was the only guess option, remove guess altogether
-                    contents = contents.replace(guess.group(1), '')
-        return contents
+        Perform a single iteration of the MECP protocol:
 
-    def run_gaussian(self, inputfile):
+        1. Prepare Gaussian jobs for each state
+        2. Run them and retrieve energy and gradients
+        3. Run MECP.x to obtain new geometry
+
+        Parameters
+        ----------
+        geom : str
+            Path to the file containing a Gaussian-formatted geometry.
+        step : int
+            Number of iterations so far. Used to identify filenames.
+
+        Returns
+        -------
+        'OK' : str
+            Iteration ended successfully
+        'ERROR' : str
+            Iteration could finish due to errors in Gaussian or MECP
+            execution.
+        """
+        # First, run Gaussian jobs
+        print('Running step #{}...'.format(step))
+        print('  Launching Gaussian job for file A...')
         try:
-            retcode = call([self.gaussian_exe, inputfile], stdout=sys.stdout, stderr=sys.stderr)
+            input_a = self.prepare_gaussian(self.a_header, geom, self.footer, label='A', step=step)
+        except ValueError as e:
+            print('  ! Error during input file preparation:', e)
+            return self.ERROR
+        logfile_a = self.run_gaussian(input_a)
+        energy_a, gradients_a = self.parse_energy_and_gradients(logfile_a)
+        print('  Launching Gaussian job for file B...')
+        try:
+            input_b = self.prepare_gaussian(self.b_header, geom, self.footer, label='B', step=step)
+        except ValueError as e:
+            print('  ! Error during input file preparation:', e)
+            return self.ERROR
+        logfile_b = self.run_gaussian(input_b)
+        energy_b, gradients_b = self.parse_energy_and_gradients(logfile_b)
+
+        # Second, run MECP
+        if not self.prepare_ab_initio(energy_a, energy_b, gradients_a, gradients_b):
+            return self.ERROR
+        print('  Launching MECP...')
+        try:
+            retcode = call([self.mecp_exe], stdout=sys.stdout, stderr=sys.stderr)
+            if os.path.isfile('AddtoReportFile'):  # this file is generated by MECP.x
+                with open('AddtoReportFile') as f:
+                    self.report(f.read())
+                os.remove('AddtoReportFile')
             if retcode:
-                raise SubprocessError('Gaussian returned code {}'.format(retcode))
+                raise SubprocessError('MECP returned code {}'.format(retcode))
         except Exception as e:
-            print('  ! Could not run Gaussian job', inputfile)
-            print('  !', e.__class__.__name__, '->', e)
+            print('  ! Error during MECP execution:', e.__class__.__name__, '->', e)
             self.report('ERROR')
-            return None, None
+            return self.ERROR
         else:
-            inputfilebase = os.path.basename(inputfile)
-            logfile = os.path.join(self.jobsdir, os.path.splitext(inputfilebase)[0] + '.log')
-            os.rename(inputfile, os.path.join(self.jobsdir, inputfilebase))
-            os.rename(os.path.splitext(inputfile)[0] + '.log', logfile)
+            self.add_trajectory_step(geom, step=step)
 
-        energy = None
-        gradients = []
-        with open(logfile) as f:
-            for line in f:
-                fields = line.split()
-                if 'Convergence failure' in line:
-                    print('  ! There has been a convergence problem with', inputfile)
-                    self.report('ERROR')
-                    return None, None
-                # gradients
-                gradients = self._parse_gradients(f, line, fields, default=gradients)
-                # energies
-                energy = self._parse_energy(f, line, fields, default=energy)
-        return energy, gradients
+        return self.OK
 
-    def _parse_gradients(self, f, line, fields, default=None):
-        if len(fields) > 2 and fields[0] == 'Center' and fields[1] == 'Atomic' and fields[2] == 'Forces':
-            gradients = []
-            next(f), next(f)  # skip two lines
-            for _ in range(self.natom):
-                line = next(f)
-                gradients.append(line.split()[1:5])
-            return gradients
-        return default
+    def do_freq(self, geom):
+        """
+        When the MECP is found, it is common to perform a frequency analysis and
+        find the average vibrations. This method does it for you. You can enable
+        it automatically by setting ``with_freq=True`` at initialization.
+
+        Parameters
+        ----------
+        geom : str
+            Path to the file containing the geometry as expected by Gaussian
+
+        Return
+        ------
+        'OK' : str
+            Frequencies obtained correctly
+        'ERROR' : str
+            Frequencies could not be obtained
+        """
+        print('Running frequency analysis...')
+        print('  Launching Gaussian job for file A...')
+        input_a = self.prepare_gaussian(self.a_header, geom, self.footer, label='A', step='_freq')
+        logfile_a = self.run_gaussian(input_a)
+        energy_a, freq_a = self.parse_free_energy_and_frequencies(logfile_a)
+        print('  Launching Gaussian job for file B...')
+        input_b = self.prepare_gaussian(self.b_header, geom, self.footer, label='B', step='_freq')
+        logfile_b = self.run_gaussian(input_b)
+        energy_b, freq_b = self.parse_free_energy_and_frequencies(logfile_b)
+        if not all((energy_a, energy_b, freq_a, freq_b)):
+            return self.ERROR
+        min_freq_a, min_freq_b = min(freq_a), min(freq_b)
+        if min_freq_a >= 0:
+            print('  ! No negative frequencies found in state A')
+        if min_freq_b >= 0:
+            print('  ! No negative frequencies found in state B')
+        self.report('Minimum frequency for state A', min_freq_a, 'cm^-1')
+        self.report('Minimum frequency for state B', min_freq_b, 'cm^-1')
+        self.report('Sum of electronic and thermal Free Energies for state A', energy_a, 'Ha')
+        self.report('Sum of electronic and thermal Free Energies for state B', energy_b, 'Ha')
+        self.report('Avg sum of electronic and thermal Free Energies for both states', (energy_a + energy_b) / 2, 'Ha')
+        return self.OK
 
     def prepare_ab_initio(self, energy_a, energy_b, gradients_a, gradients_b):
+        """
+        MECP.x expects a file named 'ab_initio' containing the energy and gradients
+        of both states. This method prepares that file in the proper format.
+
+        Parameters
+        ---------
+        energy_a, energy_b : float
+            Potential energies for both states
+        gradients_a, gradients_b : list of floats
+            Gradients for each atom for states A and B, respectively
+
+        Returns
+        -------
+        result : bool
+            True if 'ab_initio' was correctly written. False otherwise.
+        """
         if not all(x is not None for x in (energy_a, energy_b, gradients_a, gradients_b)):
             print('  ! Some energies or gradients could not be obtained!')
             return False
@@ -474,16 +598,262 @@ class MECPCalculation(object):
             print('\n'.join(['{}  {}   {}   {}'.format(*l) for l in gradients_b]), file=f)
         return True
 
-    def report(self, msg):
+    def check_current_iteration(self):
+        """
+        When MECP.x is done, the ReportFile file is filled with the results of the
+        calculation. If 'CONVERGED' or 'ERROR' keywords appear, the job is done;
+        else, iterations must continue.
+
+        Returns
+        -------
+        'OK' : str
+            Calculation has converged.
+        'ERROR' : str
+            Calculation has finished with errors.
+        None : None
+            Still not converged. Calculation must continue.
+        """
+         # Check results in this iteration
+        with open('ReportFile') as f:
+            for line in f:
+                if 'CONVERGED' in line:
+                    return self.OK
+                if 'ERROR' in line:
+                    return self.ERROR
+
+    def run_gaussian(self, inputfile):
+        """
+        Runs a Gaussian calculation. Define Gaussian executable with ``gaussian_exe``
+        at initialization.
+
+        Parameters
+        ---------
+        inputfile : str
+            Path to a valid Gaussian input file
+
+        Returns
+        -------
+        logfile : str
+            Path to the resulting Gaussian output
+        """
+        logfile = os.path.splitext(inputfile)[0] + '.log'
+        try:
+            retcode = call([self.gaussian_exe, inputfile], stdout=sys.stdout, stderr=sys.stderr)
+            if retcode:
+                raise SubprocessError('Gaussian returned code {}'.format(retcode))
+        except Exception as e:
+            print('  ! Could not run Gaussian job', inputfile)
+            print('  !', e.__class__.__name__, '->', e)
+            self.report('ERROR')
+            return logfile
+        else:
+            inputfilebase = os.path.basename(inputfile)
+            logfile = os.path.join(self.jobsdir, os.path.splitext(inputfilebase)[0] + '.log')
+            os.rename(inputfile, os.path.join(self.jobsdir, inputfilebase))
+            os.rename(os.path.splitext(inputfile)[0] + '.log', logfile)
+
+        return logfile
+
+    def prepare_gaussian(self, header, geom, footer, label='A', step=0):
+        """
+        Prepares a Gaussian input file from its fragments: header, geometry
+        and footer. This method patches the header lines depending on
+        the context:
+
+        -   If it's the first iteration, a ``%chk`` line is defined, but
+            the chkfile does not exist yet and ``guess=read`` is set,
+            remove the guess=read keyword to prevent errors.
+        -   If it's the last step (freq), replace ``force`` with ``freq``.
+
+        Parameters
+        ----------
+        header : str
+            Path to the file containing the header lines (% lines, route, title,
+            charge and multiplicity), placed before the geometry
+        geom : str
+            Path to the file containing the system geometry
+        footer : str
+            Path to the file containing the footer lines of the file, placed
+            after the geometry
+        label : str
+            State identifier. Normally, A or B. Used for filenames.
+        step : int or str
+            Number of iterations so far or, if already converged and with_freq = True,
+            '_freq'.
+
+        """
+        name = 'Job{}_{}.gjf'.format(step, label)
+        with open(name, 'w') as f:
+            with open(header) as a:
+                contents = self._check_force(a.read(), freq=step == '_freq')
+                if not step:
+                    contents = self._check_guess_read(contents)
+                f.write(contents.rstrip())
+            f.write('\n')
+            with open(geom) as b:
+                contents = element_symbol_to_number(b, drop_blank=True)
+                f.write(contents.rstrip())
+            f.write('\n\n')
+            try:
+                with open(footer) as c:
+                    f.write(c.read().lstrip())
+            except IOError:
+               pass
+            f.write('\n\n')  # Gaussian is picky about file endings...
+        return name
+
+    def _check_force(self, contents, freq=False):
+        """
+        Checks if the header lines contain the force keyword.
+
+        Parameters
+        ----------
+        contents : str
+            Header lines
+        freq : bool
+            If True, replace force with freq.
+
+        Returns
+        -------
+        contents : str
+            Patched lines if freq=True, original lines otherwise.
+        """
+        force = re.search(r'^#.*(force).*', contents, flags=re.IGNORECASE|re.MULTILINE)
+        if not force or not force.group(1):
+            raise ValueError('Header lines must include `force` keyword.')
+        elif freq:
+            contents = contents.replace(force.group(1), ' freq=projected ')
+        return contents
+
+    def _check_guess_read(self, contents):
+        """
+        Some jobs might include guess=read options to use the chk files, but
+        the first job might not have any chk available yet. We have to get rid
+        of any potential guess=read keywords in the header as a workaround.
+
+        Parameters
+        ----------
+        contents : str
+            Contents of the input file header
+
+        Returns
+        -------
+        contents : str
+            Patched contents with 'read' keyword removed, if necessary.
+        """
+        chk = re.search(r'^%chk=(.*)$', contents, flags=re.IGNORECASE|re.MULTILINE)
+        chk_exists = chk and chk.group(1) and os.path.isfile(chk.group(1).strip())
+        if not chk_exists:
+            guess = re.search(r'^#.*(guess[=(]{1,2}([^\s)]*)\)?)', contents,
+                                flags=re.IGNORECASE|re.MULTILINE)
+            if guess and guess.group(2):  # if 'read' is in guess options
+                guess_options = [f for f in guess.group(2).split(',') if f.lower().strip() != 'read']
+                if guess_options: # if there were more options besides 'read', keep them
+                    contents = contents.replace(guess.group(2), ','.join(guess_options))
+                else: # if 'read' was the only guess option, remove guess altogether
+                    contents = contents.replace(guess.group(1), '')
+        return contents
+
+    def parse_energy_and_gradients(self, logfile):
+        """
+        Extract potential energy and gradients from a Gaussian output file
+
+        Parameters
+        ----------
+        logfile : str
+            Path to the Gaussian output file
+
+        Returns
+        -------
+        energy : float or None
+            Potential energy as parsed with self._parse_energy, which
+            is set dynamically at initialization. None if it could not be
+            found.
+        gradients : list of float, or None
+            Force gradient for each atom in geometry. None if they could
+            not be found.
+        """
+        energy = None
+        gradients = []
+        with open(logfile) as f:
+            for line in f:
+                fields = line.split()
+                if 'Convergence failure' in line:
+                    print('  ! There has been a convergence problem in', logfile)
+                    self.report('ERROR')
+                    return None, None
+                # gradients
+                gradients = self._parse_gradients(f, line, fields, default=gradients)
+                # energies (defined dynamically in __init__)
+                energy = self._parse_energy(f, line, fields, default=energy)
+        return energy, gradients
+
+    def _parse_gradients(self, f, line, fields, default=None):
+        if len(fields) > 2 and fields[0] == 'Center' and fields[1] == 'Atomic' and fields[2] == 'Forces':
+            gradients = []
+            next(f), next(f)  # skip two lines
+            for _ in range(self.natom):
+                line = next(f)
+                gradients.append(line.split()[1:5])
+            return gradients
+        return default
+
+    def parse_free_energy_and_frequencies(self, logfile):
+        """
+        Extract vibrational frequencies from a Gaussian output file
+
+        Parameters
+        ----------
+        logfile : str
+            Path to the Gaussian output file
+
+        Returns
+        -------
+        frequencies : list of float, or None
+            Vibration frequencies of system. None if they could
+            not be found.
+
+        Notes
+        -----
+
+        Partially inspired by ``cclib.parser.gaussianparser``.
+        """
+        energy, frequencies = None, None
+        with open(logfile) as f:
+            for line in f:
+                if line[1:14] == "Harmonic freq":  # enter the frequency block
+                    frequencies = []
+                    while line.strip():
+                        if line[1:15] == "Frequencies --":
+                            frequencies.extend([float(x) for x in line[15:].split()])
+                        line = next(f)
+                elif line[1:44] == "Sum of electronic and thermal Free Energies":
+                    energy = float(line.split()[-1])
+        return energy, frequencies
+
+    def report(self, *msg):
+        """
+        Print wrapper to write into `ReportFile`.
+        """
         with open('ReportFile', 'a') as r:
-            print(msg, file=r)
+            print(*msg, file=r)
 
     def add_trajectory_step(self, geometry='geom', step=0):
+        """
+        Add a new step to the current trajectory file, in xyz format.
+
+        Parameters
+        ----------
+        geometry : str
+            Path to XYZ file containing new geometry
+        step : int
+            Optimization step
+        """
         with open(self.jobsdir + '/trajectory.xyz', 'a') as f:
             print(self.natom, file=f)
             print('Step', step, file=f)
             with open(geometry) as g:
-                print(self.element_number_to_symbol(g, drop_blank=True), file=f)
+                print(element_number_to_symbol(g, drop_blank=True), file=f)
 
 
 ###
@@ -516,7 +886,7 @@ def _parse_energy_td(f, line, fields, default=None):
 ###
 # Validators
 ###
-def _valid_fortran_double(value, key=None):
+def fortran_double(value, key=None):
     try:
         float(value.replace('d', 'e'))
     except ValueError:
@@ -526,7 +896,7 @@ def _valid_fortran_double(value, key=None):
         return value
 
 
-def _extant_file(path, name=None, allow_errors=False):
+def extant_file(path, name=None, allow_errors=False):
     """ Verify file exists or report error """
     if os.path.isfile(path):
         return path
@@ -565,6 +935,35 @@ def temporary_directory(enter=True, **kwargs):
     shutil.rmtree(temp_dir)
 
 
+def element_symbol_to_number(fh, drop_blank=True):
+    elements = ELEMENTS
+    lines = []
+    for line in fh:
+        if drop_blank and not line.strip():
+            continue
+        fields = line.split()
+        if len(fields) > 3:
+            if not fields[0].isdigit():
+                number = elements.get(fields[0].title(), -1)
+                line = line.replace(fields[0], str(number))
+        lines.append(line)
+    return ''.join(lines)
+
+
+def element_number_to_symbol(fh, drop_blank=False):
+    elements = REVERSE_ELEMENTS
+    lines = []
+    for line in fh:
+        if drop_blank and not line.strip():
+            continue
+        fields = line.split()
+        if len(fields) > 3:
+            if fields[0].isdigit():
+                symbol = elements.get(int(fields[0]), 'LP')
+                line = line.replace(fields[0], symbol, 1)
+        lines.append(line)
+    return ''.join(lines)
+
 ###
 # App
 ###
@@ -576,7 +975,7 @@ def _parse_cli():
     p.add_argument('-f', '--inputfile', metavar='INPUTFILE', type=extant_file,
                    help='Initialize from Gaussian input file. Divergent options can be '
                         'specified with curly braces at any time: {A,B}. Additional flags '
-    'must be specified in comment lines (read above).')
+                        'must be specified in comment lines (read above).')
     p.add_argument('--conf', metavar='CONFFILE', type=extant_file,
                    help='Initialize from configuration file.Each value must be provided in '
                         'its own line, with syntax <key>: <value>.')
@@ -676,6 +1075,8 @@ REVERSE_ELEMENTS = dict((v, k) for (k, v) in ELEMENTS.items())
 USAGE = {
     'max_steps':
        'Number of iterations to perform until stop or convergence',
+    'with_freq':
+        'Perform a freq=projected calculation after convergence',
     'natom':
         'If easymecp cannot detect number of atoms automatically, override with this option',
     'a_header':
