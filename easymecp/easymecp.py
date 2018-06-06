@@ -149,12 +149,18 @@ class MECPCalculation(object):
 
     >>> mecp = MECPCalculation(a_header='singlet.header', b_header='triplet.header',
                                geom='initial_geometry.xyz', footer=None, max_steps=100)
-    >>> mecp.run
+    >>> mecp.run()
     """
 
     OK = 'OK'
     ERROR = 'ERROR'
     MAX_ITERATIONS_REACHED = 'MAX_ITERATIONS_REACHED'
+
+    ####################################################################################
+    #
+    # Initializers
+    #
+    ####################################################################################
 
     def __init__(self, max_steps=50, a_header='Input_Header_A', b_header='Input_Header_B',
                  geom='geom', footer='footer', with_freq=False, natom=0, TDE='5.d-5',
@@ -375,32 +381,11 @@ class MECPCalculation(object):
         print(*d.items(), sep='\n')
         return cls(**d)
 
-    def compile_fortran(self):
-        """
-        EasyMECP still uses the Fortran MECP searcher behind the scenes, but saves you
-        the hassle of manually recompiling the code everytime the number of atoms changes.
-        This function takes care of that.
-
-        The compiler binary and its flags can be specified at initialization with ``FC``
-        and ``FFLAGS``, respectively. Number of atoms at threshold values for convergence
-        too.
-
-        Returns
-        -------
-        path : str
-            Path to the freshly compiled Fortran program (``./MECP.x``)
-        """
-        with temporary_directory(enter=False) as tmp:
-            # Patch source code
-            code = MECP_FORTRAN.format(NUMATOM=self.natom, TDE=self.TDE, TDXMax=self.TDXMax,
-                                       TDXRMS=self.TDXRMS, TGMax=self.TGMax, TGRMS=self.TGRMS)
-            with open(os.path.join(tmp, 'MECP.f'), 'w') as f:
-                f.write(code)
-            with open('_fortran_compilation', 'w') as out:
-                call([self.FC] + shlex.split(self.FFLAGS) + ['MECP.f', '-o', 'MECP.x'], cwd=tmp, stdout=out)
-            shutil.copyfile(os.path.join(tmp, 'MECP.x'), 'MECP.x')
-        os.chmod('MECP.x', os.stat('MECP.x').st_mode | 0o111)  # make executable
-        return './MECP.x'
+    ####################################################################################
+    #
+    # Program flow
+    #
+    ####################################################################################
 
     def run(self):
         """
@@ -443,25 +428,6 @@ class MECPCalculation(object):
             print()
 
         return self.MAX_ITERATIONS_REACHED
-
-    def prepare_workspace(self):
-        """
-        Prepare some of the files expected by MECP.x in its first run,
-        ProgFile and ReportFile.
-
-        """
-        with open(self.geom) as f:
-            geometry = element_symbol_to_number(f)
-        with open('ProgFile', 'w') as f:
-            f.seek(0)
-            f.write(PROGFILE.format(natom=self.natom, geometry=geometry))
-            f.truncate()
-        with open('ReportFile', 'w') as f:
-            f.seek(0)
-            f.write('{}\n'.format(datetime.now()))
-            f.truncate()
-
-        self.add_trajectory_step(self.geom, step=0)
 
     def do_iteration(self, geom, step):
         """
@@ -563,6 +529,59 @@ class MECPCalculation(object):
         self.report('Avg sum of electronic and thermal Free Energies for both states', (energy_a + energy_b) / 2, 'Ha')
         return self.OK
 
+    ####################################################################################
+    #
+    # Fortran MECP helpers
+    #
+    ####################################################################################
+
+    def compile_fortran(self):
+        """
+        EasyMECP still uses the Fortran MECP searcher behind the scenes, but saves you
+        the hassle of manually recompiling the code everytime the number of atoms changes.
+        This function takes care of that.
+
+        The compiler binary and its flags can be specified at initialization with ``FC``
+        and ``FFLAGS``, respectively. Number of atoms at threshold values for convergence
+        too.
+
+        Returns
+        -------
+        path : str
+            Path to the freshly compiled Fortran program (``./MECP.x``)
+        """
+        with temporary_directory(enter=False) as tmp:
+            # Patch source code
+            code = MECP_FORTRAN.format(NUMATOM=self.natom, TDE=self.TDE, TDXMax=self.TDXMax,
+                                       TDXRMS=self.TDXRMS, TGMax=self.TGMax, TGRMS=self.TGRMS)
+            with open(os.path.join(tmp, 'MECP.f'), 'w') as f:
+                f.write(code)
+            with open('_fortran_compilation', 'w') as out:
+                call([self.FC] + shlex.split(self.FFLAGS) + ['MECP.f', '-o', 'MECP.x'], cwd=tmp, stdout=out)
+            shutil.copyfile(os.path.join(tmp, 'MECP.x'), 'MECP.x')
+        os.chmod('MECP.x', os.stat('MECP.x').st_mode | 0o111)  # make executable
+        return './MECP.x'
+
+    def prepare_workspace(self):
+        """
+        Prepare some of the files expected by MECP.x in its first run,
+        ProgFile and ReportFile.
+
+        """
+        with open(self.geom) as f:
+            geometry = element_symbol_to_number(f)
+        with open('ProgFile', 'w') as f:
+            f.seek(0)
+            f.write(PROGFILE.format(natom=self.natom, geometry=geometry))
+            f.truncate()
+        with open('ReportFile', 'w') as f:
+            f.seek(0)
+            f.write('{}\n'.format(datetime.now()))
+            f.truncate()
+
+        self.add_trajectory_step(self.geom, step=0)
+
+
     def prepare_ab_initio(self, energy_a, energy_b, gradients_a, gradients_b):
         """
         MECP.x expects a file named 'ab_initio' containing the energy and gradients
@@ -616,6 +635,12 @@ class MECPCalculation(object):
                     return self.OK
                 if 'ERROR' in line:
                     return self.ERROR
+
+    ####################################################################################
+    #
+    # Gaussian helpers
+    #
+    ####################################################################################
 
     def run_gaussian(self, inputfile):
         """
@@ -698,6 +723,12 @@ class MECPCalculation(object):
             f.write('\n\n')  # Gaussian is picky about file endings...
         return name
 
+    ####################################################################################
+    #
+    # Input data helpers
+    #
+    ####################################################################################
+
     def _check_force(self, contents, freq=False):
         """
         Checks if the header lines contain the force keyword.
@@ -749,6 +780,12 @@ class MECPCalculation(object):
                 else: # if 'read' was the only guess option, remove guess altogether
                     contents = contents.replace(guess.group(1), '')
         return contents
+
+    ####################################################################################
+    #
+    # Output data helpers
+    #
+    ####################################################################################
 
     def parse_energy_and_gradients(self, logfile):
         """
@@ -852,9 +889,9 @@ class MECPCalculation(object):
                 print(element_number_to_symbol(g, drop_blank=True), file=f)
 
 
-###
+########################################################################################
 # Energy parsers
-###
+########################################################################################
 def _parse_energy_dft(f, line, fields, default=None):
     if len(fields) > 4 and fields[0] == 'SCF' and fields[1] == 'Done:':
         return float(fields[4])
@@ -879,9 +916,9 @@ def _parse_energy_td(f, line, fields, default=None):
     return default
 
 
-###
+########################################################################################
 # Validators
-###
+########################################################################################
 def fortran_double(value, key=None):
     try:
         float(value.replace('d', 'e'))
@@ -907,9 +944,9 @@ def extant_file(path, name=None, allow_errors=False):
         raise ValueError(msg)
 
 
-###
+########################################################################################
 # Helpers
-###
+########################################################################################
 def _get_defaults():
     _defaults = MECPCalculation.__init__.__defaults__
     _ndef = len(_defaults)
@@ -960,9 +997,10 @@ def element_number_to_symbol(fh, drop_blank=False):
         lines.append(line)
     return ''.join(lines)
 
-###
+
+########################################################################################
 # App
-###
+########################################################################################
 def _parse_cli():
     description = __doc__.replace('<VERSION>', __version__)
     p = argparse.ArgumentParser(prog='easymecp', description=description,
@@ -1019,9 +1057,9 @@ def main():
         print('Calculation did not converge after', calc.max_steps, 'steps...')
 
 
-###
+########################################################################################
 # Constants
-###
+########################################################################################
 DEFAULTS = _get_defaults()
 
 AVAILABLE_ENERGY_PARSERS = set([key[14:] for key in globals().copy()
