@@ -172,7 +172,7 @@ class MECPCalculation(object):
         os.makedirs(self.jobsdir)
 
     @classmethod
-    def from_conf(cls, path):
+    def from_conf(cls, path, **kw):
         d = _get_defaults()
         with open(path) as f:
             for i, line in enumerate(f, 1):
@@ -196,10 +196,11 @@ class MECPCalculation(object):
                         print('! `{}` file with path `{}` not available!'.format(key, value))
                         sys.exit()
                 d[key] = value
+        d.update(kw)
         return cls(**d)
 
     @classmethod
-    def from_gaussian_input_file(cls, path):
+    def from_gaussian_input_file(cls, path, **kw):
         def _process_header_line(line):
             match = re.search(r'{(.*),(.*)}', line)
             if match:
@@ -267,6 +268,8 @@ class MECPCalculation(object):
         with open(os.path.splitext(os.path.basename(path))[0] + '.conf', 'w') as f:
             f.write('\n'.join('{}: {}'.format(k, v) for (k,v) in d.items()))
 
+        # If additional keywords are passed to this classmethod, override infile ones.
+        d.update(kw)
         return cls(**d)
 
     def run(self):
@@ -570,31 +573,42 @@ def _parse_cli():
     p = argparse.ArgumentParser(prog='easymecp', description=description,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('-V', '--version', action='version', version='%(prog)s v' + __version__)
-    p.add_argument('-f', '--inputfile', metavar='INPUTFILE', help='Initialize from Gaussian input file. '
-    'Divergent options can be specified with curly braces at any time: {A,B}. Additional flags '
+    p.add_argument('-f', '--inputfile', metavar='INPUTFILE', type=extant_file,
+                   help='Initialize from Gaussian input file. Divergent options can be '
+                        'specified with curly braces at any time: {A,B}. Additional flags '
     'must be specified in comment lines (read above).')
-    p.add_argument('--conf', metavar='CONFFILE', help='Initialize from configuration file. '
-                   'Each value must be provided in its own line, with syntax <key>: <value>.')
+    p.add_argument('--conf', metavar='CONFFILE', type=extant_file,
+                   help='Initialize from configuration file.Each value must be provided in '
+                        'its own line, with syntax <key>: <value>.')
     defaults = _get_defaults()
     for k, v in sorted(defaults.items()):
-        p.add_argument('--'+k, default=v, metavar='VALUE', help='{} (default={!r})'.format(USAGE[k], v))
+        if v is True:
+            kwargs = {'action': 'store_false'}
+        elif v is False:
+            kwargs = {'action': 'store_true'}
+        else:
+            kwargs = {'action': 'store', 'metavar': 'VALUE', 'type': type(v)}
+        p.add_argument('--'+k, default=v, help='{} (default={!r})'.format(USAGE[k], v),
+                       **kwargs)
     args = p.parse_args()
     return args
 
 
 def main():
     args = _parse_cli()
+    argv_keys = [a.lstrip('-') for a in sys.argv[1:] if a.lstrip('-') in vars(args)]
+    user_args = {k:v for (k,v) in vars(args).items()
+                 if k not in ('inputfile', 'conf') and k in argv_keys}
     try:
-        if args.inputfile:
-            print('Gaussian input file', args.inputfile, 'has been specified. '
-                  'Ignoring any other arguments!')
-            calc = MECPCalculation.from_gaussian_input_file(args.inputfile)
+        if args.inputfile and args.conf:
+            raise ValueError('-f/--inputfile and --conf options cannot '
+                             'be specified at the same time.')
+        elif args.inputfile:
+            calc = MECPCalculation.from_gaussian_input_file(args.inputfile, **user_args)
         elif args.conf:
-            print('Configuration file', args.conf, 'has been specified. '
-                  'Ignoring any other arguments!')
-            calc = MECPCalculation.from_conf(args.conf)
+            calc = MECPCalculation.from_conf(args.conf, **user_args)
         else:
-            calc = MECPCalculation(**args.__dict__)
+            calc = MECPCalculation(**user_args)
     except ValueError as e:
         print('! ERROR:', e)
         print('         Run easymecp -h (or python easymecp.py -h) for help.')
