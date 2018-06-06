@@ -556,10 +556,6 @@ class MECPCalculation(object):
         if not all((energy_a, energy_b, freq_a, freq_b)):
             return self.ERROR
         min_freq_a, min_freq_b = min(freq_a), min(freq_b)
-        if min_freq_a >= 0:
-            print('  ! No negative frequencies found in state A')
-        if min_freq_b >= 0:
-            print('  ! No negative frequencies found in state B')
         self.report('Minimum frequency for state A', min_freq_a, 'cm^-1')
         self.report('Minimum frequency for state B', min_freq_b, 'cm^-1')
         self.report('Sum of electronic and thermal Free Energies for state A', energy_a, 'Ha')
