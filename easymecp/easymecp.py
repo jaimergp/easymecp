@@ -111,7 +111,7 @@ import shlex
 import shutil
 
 
-__version__ = '0.3'
+__version__ = '0.3.1'
 
 
 class MECPCalculation(object):
