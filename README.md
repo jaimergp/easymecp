@@ -134,7 +134,7 @@ For backward compatibility, a separate mode is provided that mimics the original
 
 - `Input_Header_A`: File containing the top part of system configuration with multiplicity A. Name can be changed with `--a_header` key.
 - `Input_Header_B`: File containing the top part of system configuration with multiplicity B. Name can be changed with `--b_header` key.
-- `geom`: File containing the starting system geometry (element symbols will be converted in atomic numbers automatically). Name can be changed with `--geom`` key.
+- `geom`: File containing the starting system geometry (element symbols will be converted in atomic numbers automatically). Name can be changed with `--geom` key.
 - `footer` (optional): File containing the bottom part of system configuration (basis sets, etc). Name can be changed with `--footer` flag.
 
 If you use the default filenames and values, you can simply type and the script will run:
@@ -191,9 +191,10 @@ python easymecp.py --energy_parser energy.py
 If the calculation does not converge before reaching `max_steps`, you might want to extend it. It's simple: take the latest geometry you like (last one is always in the file `geom`, but you can create another if you want), and either:
 
 A. Manually modify your ``input.gjf`` file... OR
+
 B. Use the old-style options and relaunch with `easymecp --geom <your_geometry>`. Since the new-style will have created the individuals files anyway, you can combine both seamlessly.
 
-No files are lost with the restarts, if the `JOBS` folder already exists, new ones will be is automatically named as `JOBS1`, `JOBS2`, etc.
+No files are lost with the restarts, if the `JOBS` folder already exists, new ones will be automatically named as `JOBS1`, `JOBS2`, etc.
 
 
 # More MECP implementations for Gaussian
