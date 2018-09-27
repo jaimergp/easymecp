@@ -5,6 +5,7 @@ import os
 import shutil
 import sys
 import re
+import math
 from subprocess import check_output
 import pytest
 from easymecp.easymecp import MECPCalculation, temporary_directory
@@ -153,3 +154,81 @@ def test_freq(directory, freq_a, freq_b, energy_a, energy_b, energy_avg):
                 elif line.startswith('Avg sum of electronic and thermal Free Energies for both states'):
                     value = float(line.split()[-2])
                     assert abs(energy_avg - value) < 1e-2
+
+
+def test_geometry():
+    directory = 'C6H5+_singlefile'
+
+    # Values provided in Theor Chem Acc (1998) 99:95-99, Table 2, MECP B3LYP row
+    distances = [1.415, 1.392, 1.437]
+    angles = [128.9, 114.9, 119.4, 122.5, 122.3, 120.6]
+
+    cwd = os.getcwd()
+    original_data = os.path.join(here, 'data', directory)
+    steps = required_steps(os.path.join(original_data, 'ReportFile'))
+    with temporary_directory() as tmp:
+        new_data = os.path.join(tmp, directory)
+        print(new_data, file=sys.stderr)
+        shutil.copytree(original_data, new_data)
+        os.chdir(new_data)
+        calc = MECPCalculation.from_gaussian_input_file('input.gjf')
+        result = calc.run()
+        if result != calc.OK:
+            try:
+                os.makedirs(os.path.join(cwd, 'failed'))
+            except:
+                pass
+            shutil.copytree(new_data, os.path.join(cwd, 'failed', directory))
+        assert result == calc.OK
+        if calc.converged_at != steps:
+            print('! Warning: calculation ended OK but took a different number of steps')
+
+        if os.path.isfile('geom'):
+            atoms = parse_xyz('geom')
+        else:
+            atoms = parse_xyz(calc.geom)
+        # List contains: C1, C2, C3, C4, C5, C6, H1, H2, H3, H4, H5; in that order
+        assert abs(distances[0] - distance(atoms[0][1], atoms[5][1])) < 0.15
+        assert abs(distances[1] - distance(atoms[4][1], atoms[5][1])) < 0.15
+        assert abs(distances[2] - distance(atoms[3][1], atoms[4][1])) < 0.15
+        assert abs(angles[0] - angle(atoms[5][1], atoms[0][1], atoms[1][1])) < 1.5
+        assert abs(angles[1] - angle(atoms[0][1], atoms[1][1], atoms[2][1])) < 1.5
+        assert abs(angles[2] - angle(atoms[1][1], atoms[2][1], atoms[3][1])) < 1.5
+        assert abs(angles[3] - angle(atoms[2][1], atoms[3][1], atoms[4][1])) < 1.5
+        assert abs(angles[4] - angle(atoms[0][1], atoms[1][1], atoms[6][1])) < 1.5
+        assert abs(angles[5] - angle(atoms[1][1], atoms[2][1], atoms[7][1])) < 1.5
+
+
+def parse_xyz(path):
+    atoms = []
+    with open(path) as f:
+        for line in f:
+            fields = line.split()
+            if len(fields) == 4:
+                atoms.append((fields[0], (float(fields[1]), float(fields[2]), float(fields[3]))))
+    return atoms
+
+
+def distance(a, b):
+    return math.hypot(a[0] - b[0], a[1] - b[1])
+
+
+def angle(a, b, c):
+    # Create vectors from points
+    ba = [aa-bb for (aa,bb) in zip(a,b)]
+    bc = [cc-bb for (cc,bb) in zip(c,b)]
+
+    # Normalize vector
+    nba = math.sqrt(sum((x**2.0 for x in ba)))
+    ba = [x/nba for x in ba]
+
+    nbc = math.sqrt(sum((x**2.0 for x in bc)))
+    bc = [x/nbc for x in bc]
+
+    # Calculate scalar from normalized vectors
+    scal = sum((aa*bb for (aa,bb) in zip(ba,bc)))
+
+    # calculate the angle in radian
+    angle = math.acos(scal)
+    # return in degrees
+    return angle * 180 / math.pi

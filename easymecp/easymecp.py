@@ -378,7 +378,6 @@ class MECPCalculation(object):
 
         # If additional keywords are passed to this classmethod, override infile ones.
         d.update(**kw)
-        print(*d.items(), sep='\n')
         return cls(**d)
 
     ####################################################################################
@@ -956,7 +955,7 @@ def _get_defaults():
 
 
 @contextmanager
-def temporary_directory(enter=True, **kwargs):
+def temporary_directory(enter=True, remove=True, **kwargs):
     """Create and enter a temporary directory; used as context manager."""
     temp_dir = mkdtemp(**kwargs)
     if enter:
@@ -965,7 +964,8 @@ def temporary_directory(enter=True, **kwargs):
     yield temp_dir
     if enter:
         os.chdir(cwd)
-    shutil.rmtree(temp_dir)
+    if remove:
+        shutil.rmtree(temp_dir)
 
 
 def element_symbol_to_number(fh, drop_blank=True):
