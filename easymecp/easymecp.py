@@ -102,7 +102,10 @@ from contextlib import contextmanager
 from datetime import datetime
 from distutils.spawn import find_executable
 from runpy import run_path
-from subprocess import call, SubprocessError
+try:
+    from subprocess import call, SubprocessError
+except ImportError:  # Py27
+    from subprocess import call, CalledProcessError as SubprocessError
 from tempfile import mkdtemp
 import argparse
 import os
@@ -111,7 +114,7 @@ import shlex
 import shutil
 
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 
 class MECPCalculation(object):
@@ -556,7 +559,18 @@ class MECPCalculation(object):
             with open(os.path.join(tmp, 'MECP.f'), 'w') as f:
                 f.write(code)
             with open('_fortran_compilation', 'w') as out:
-                call([self.FC] + shlex.split(self.FFLAGS) + ['MECP.f', '-o', 'MECP.x'], cwd=tmp, stdout=out)
+                try:
+                    call([self.FC] +
+                         shlex.split(self.FFLAGS) +
+                         ['MECP.f', '-o', 'MECP.x'],
+                         cwd=tmp, stdout=out)
+                except OSError:
+                    print('! Error with Fortran compilation. '
+                          'Is `FC={}` correctly set?'.format(self.FC), file=sys.stderr)
+                    raise
+                except SubprocessError:
+                    print('! Fortran compilation did not succeed. Check logs and '
+                          '`FFLAGS={}` value.'.format(self.FFLAGS), file=sys.stderr)
             shutil.copyfile(os.path.join(tmp, 'MECP.x'), 'MECP.x')
         os.chmod('MECP.x', os.stat('MECP.x').st_mode | 0o111)  # make executable
         return './MECP.x'

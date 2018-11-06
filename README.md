@@ -17,7 +17,7 @@ easyMECP provides a single-file, self-contained Python wrapper around the [origi
 - It still uses the original MECP code behind the scenes, so you can trust the results.
 - Optimization trajectory is written for every step.
 - Several energy parsers included: `dft`, `pm2`, `ci`, `td`. You can include a new one in a separate Python file if needed.
-- Unit-tests (needs `pytest`).
+- Unit-tests (needs `pytest`, `numpy`).
 
 ## Why?!
 
