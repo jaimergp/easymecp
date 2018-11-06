@@ -1,0 +1,14 @@
+! easymecp: max_steps=40
+! easymecp: TDE=5.d-5
+! easymecp: TDXMax=4.d-3
+! easymecp: TDXRMS=2.5d-3
+! easymecp: TGMax=7.d-4
+! easymecp: TGRMS=5.d-4
+%mem=6GB
+%nproc=4
+%chk=singlet.chk
+#n B3LYP/6-31G** force guess(read)
+
+First State
+
+1 1

@@ -1,0 +1,10 @@
+{
+	if (($1 == "Center") && ($2 == "Atomic") && ($3 == "Forces")) {
+		getline
+		getline
+		for (i=1; i<=nat; i++) {
+			getline
+                        print $2 "  " $3 "   " $4 "   " $5
+		}
+	}
+}

@@ -1,0 +1,8 @@
+%mem=6GB
+%nproc=4
+%chk=singlet.chk
+#n B3LYP/6-31G** force guess(read)
+
+First State
+
+1 1

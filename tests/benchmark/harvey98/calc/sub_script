@@ -1,0 +1,45 @@
+#! /bin/csh -f
+set name = $1
+set natom = $2
+if ($name == 'Job0') then
+	ls | grep 'Job0_A.log' >& /dev/null
+	if ($status != 0) then
+		g09 $name'_A.gjf'
+	endif
+	ls | grep 'Job0_B.log' >& /dev/null
+	if ($status != 0) then
+		g09 $name'_B.gjf'
+	endif
+else
+	g09 $name'_A.gjf'
+	g09 $name'_B.gjf'
+endif
+grep 'Convergence failure' < $name'_A.log' >& /dev/null
+if ($status == 0) then
+	echo 'There has been a convergence problem'
+	echo 'ERROR' >> ReportFile
+	exit
+endif
+grep 'Convergence failure' < $name'_B.log' >& /dev/null
+if ($status == 0) then
+	echo 'There has been a convergence problem'
+	echo 'ERROR' >> ReportFile
+	exit
+endif
+echo 'Energy of the First State' > ab_initio
+awk -f extract_energy < $name'_A.log' >> ab_initio
+echo 'Gradient of the First State' >> ab_initio
+awk -v nat=$natom -f extract_gradient < $name'_A.log' >> ab_initio
+echo 'Energy of the Second State' >> ab_initio
+awk -f extract_energy < $name'_B.log' >> ab_initio
+echo 'Gradient of the Second State' >> ab_initio
+awk -v nat=$natom -f extract_gradient < $name'_B.log' >> ab_initio
+./MECP.x
+if ($status != 0) then
+        echo 'Problem with Fortran program'
+        echo 'ERROR' >> ReportFile
+        exit
+endif
+cat AddtoReportFile >> ReportFile
+rm -f AddtoReportFile
+

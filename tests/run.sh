@@ -1,10 +1,6 @@
 #!/bin/bash -i
 
-###
-## Run Garleek tests demo script
-## This script should me run with -i mode enabled
-####
-
+# Run with `bash -i run.sh $GAUSSIAN_VERSION`
 
 source ~/.local/anaconda/etc/profile.d/conda.sh
 
@@ -34,7 +30,7 @@ elif [[ $GAUSSIAN_VERSION == 'g16' ]]; then
     module load g16
 fi
 
-## Load Tinker
+## Load dependencies
 conda activate easymecp
 
 export GAUSS_SCRDIR="$HOME/tmp/scratch"

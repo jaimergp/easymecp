@@ -1,0 +1,9 @@
+#! /bin/csh -f
+cp first_geom geom
+cat Input_Header_A geom footer > Job0_A.gjf
+cat Input_Header_B geom footer > Job0_B.gjf
+sed -i 's/guess(read)//g' Job0_A.gjf
+sed -i 's/guess(read)//g' Job0_B.gjf
+cp first_progfile ProgFile
+
+

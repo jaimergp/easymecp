@@ -8,6 +8,7 @@ import re
 import math
 from subprocess import check_output
 import pytest
+import numpy as np
 from easymecp.easymecp import MECPCalculation, temporary_directory
 here = os.path.abspath(os.path.dirname(__file__))
 data = os.path.join(here, 'data')
@@ -157,7 +158,8 @@ def test_freq(directory, freq_a, freq_b, energy_a, energy_b, energy_avg):
 
 
 def test_geometry():
-    directory = 'C6H5+_singlefile'
+    directory = 'C6H5+'
+    # directory = 'C6H5+_singlefile'
 
     # Values provided in Theor Chem Acc (1998) 99:95-99, Table 2, MECP B3LYP row
     distances = [1.415, 1.392, 1.437]
@@ -166,12 +168,13 @@ def test_geometry():
     cwd = os.getcwd()
     original_data = os.path.join(here, 'data', directory)
     steps = required_steps(os.path.join(original_data, 'ReportFile'))
-    with temporary_directory() as tmp:
+    with temporary_directory(remove=False) as tmp:
         new_data = os.path.join(tmp, directory)
         print(new_data, file=sys.stderr)
         shutil.copytree(original_data, new_data)
         os.chdir(new_data)
-        calc = MECPCalculation.from_gaussian_input_file('input.gjf')
+        calc = MECPCalculation(geom='geom_init')
+        # calc = MECPCalculation.from_gaussian_input_file('input.gjf')
         result = calc.run()
         if result != calc.OK:
             try:
@@ -188,15 +191,27 @@ def test_geometry():
         else:
             atoms = parse_xyz(calc.geom)
         # List contains: C1, C2, C3, C4, C5, C6, H1, H2, H3, H4, H5; in that order
-        assert abs(distances[0] - distance(atoms[0][1], atoms[5][1])) < 0.15
-        assert abs(distances[1] - distance(atoms[4][1], atoms[5][1])) < 0.15
-        assert abs(distances[2] - distance(atoms[3][1], atoms[4][1])) < 0.15
+        assert abs(distances[0] - np_distance(atoms[0][1], atoms[5][1])) < 0.15
+        assert abs(distances[1] - np_distance(atoms[4][1], atoms[5][1])) < 0.15
+        assert abs(distances[2] - np_distance(atoms[3][1], atoms[4][1])) < 0.15
         assert abs(angles[0] - angle(atoms[5][1], atoms[0][1], atoms[1][1])) < 1.5
         assert abs(angles[1] - angle(atoms[0][1], atoms[1][1], atoms[2][1])) < 1.5
         assert abs(angles[2] - angle(atoms[1][1], atoms[2][1], atoms[3][1])) < 1.5
         assert abs(angles[3] - angle(atoms[2][1], atoms[3][1], atoms[4][1])) < 1.5
         assert abs(angles[4] - angle(atoms[0][1], atoms[1][1], atoms[6][1])) < 1.5
         assert abs(angles[5] - angle(atoms[1][1], atoms[2][1], atoms[7][1])) < 1.5
+        assert rmsd('geom_init', calc.geom) < 0.1
+        with open(os.path.join(cwd, 'geometry-results.txt'), 'w') as f:
+            print('Distance', atoms[0][0], atoms[5][0], '=', np_distance(atoms[0][1], atoms[5][1]), file=f)
+            print('Distance', atoms[4][0], atoms[5][0], '=', np_distance(atoms[4][1], atoms[5][1]), file=f)
+            print('Distance', atoms[3][0], atoms[4][0], '=', np_distance(atoms[3][1], atoms[4][1]), file=f)
+            print('Angle', atoms[5][0], atoms[0][0], atoms[1][0], '=', angle(atoms[5][1], atoms[0][1], atoms[1][1]), file=f)
+            print('Angle', atoms[0][0], atoms[1][0], atoms[2][0], '=', angle(atoms[0][1], atoms[1][1], atoms[2][1]), file=f)
+            print('Angle', atoms[1][0], atoms[2][0], atoms[3][0], '=', angle(atoms[1][1], atoms[2][1], atoms[3][1]), file=f)
+            print('Angle', atoms[2][0], atoms[3][0], atoms[4][0], '=', angle(atoms[2][1], atoms[3][1], atoms[4][1]), file=f)
+            print('Angle', atoms[0][0], atoms[1][0], atoms[6][0], '=', angle(atoms[0][1], atoms[1][1], atoms[6][1]), file=f)
+            print('Angle', atoms[1][0], atoms[2][0], atoms[7][0], '=', angle(atoms[1][1], atoms[2][1], atoms[7][1]), file=f)
+            print('RMSD =', rmsd('geom_init', calc.geom), file=f)
 
 
 def parse_xyz(path):
@@ -211,6 +226,10 @@ def parse_xyz(path):
 
 def distance(a, b):
     return math.hypot(a[0] - b[0], a[1] - b[1])
+
+
+def np_distance(a, b):
+    return np.linalg.norm(np.array(a)-np.array(b))
 
 
 def angle(a, b, c):
@@ -232,3 +251,13 @@ def angle(a, b, c):
     angle = math.acos(scal)
     # return in degrees
     return angle * 180 / math.pi
+
+
+def rmsd(file_a, file_b):
+    mol_a = parse_xyz(file_a)
+    mol_b = parse_xyz(file_b)
+
+    xyz_a = np.array([atom[1] for atom in mol_a])
+    xyz_b = np.array([atom[1] for atom in mol_b])
+
+    return np.sqrt(np.mean(np.square(xyz_a-xyz_b)))
