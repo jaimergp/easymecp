@@ -670,7 +670,8 @@ class MECPCalculation(object):
         logfile : str
             Path to the resulting Gaussian output
         """
-        logfile = os.path.splitext(inputfile)[0] + '.log'
+        LOGFILE_EXTENSIONS = '.log', '.out'
+        logfile = None
         try:
             retcode = call([self.gaussian_exe, inputfile], stdout=sys.stdout, stderr=sys.stderr)
             if retcode:
@@ -679,12 +680,23 @@ class MECPCalculation(object):
             print('  ! Could not run Gaussian job', inputfile)
             print('  !', e.__class__.__name__, '->', e)
             self.report('ERROR')
-            return logfile
+            for EXT in LOGFILE_EXTENSIONS:
+                logfile = os.path.splitext(inputfile)[0] + EXT
+                if os.path.isfile(logfile):
+                    return logfile
         else:
             inputfilebase = os.path.basename(inputfile)
-            logfile = os.path.join(self.jobsdir, os.path.splitext(inputfilebase)[0] + '.log')
             os.rename(inputfile, os.path.join(self.jobsdir, inputfilebase))
-            os.rename(os.path.splitext(inputfile)[0] + '.log', logfile)
+            for EXT in LOGFILE_EXTENSIONS:
+                try:
+                    logfile = os.path.join(self.jobsdir, os.path.splitext(inputfilebase)[0] + EXT)
+                    os.rename(os.path.splitext(inputfile)[0] + EXT, logfile)
+                except Exception as e:
+                    continue
+                else:
+                    break
+            else:
+                raise IOError("! Could not find output file for " + inputfile)
 
         return logfile
 
