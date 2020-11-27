@@ -1,4 +1,7 @@
-# easyMECP
+# EasyMECP
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4293421.svg)](https://doi.org/10.5281/zenodo.4293421)
+
 
 Self-contained Python script for performing MECP (Minimum Energy Crossing Point) with Gaussian.
 
@@ -195,6 +198,23 @@ A. Manually modify your ``input.gjf`` file... OR
 B. Use the old-style options and relaunch with `easymecp --geom <your_geometry>`. Since the new-style will have created the individuals files anyway, you can combine both seamlessly.
 
 No files are lost with the restarts, if the `JOBS` folder already exists, new ones will be automatically named as `JOBS1`, `JOBS2`, etc.
+
+# Cite this work
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4293421.svg)](https://doi.org/10.5281/zenodo.4293421)
+
+```
+@software{easymecp,
+  author       = {Jaime Rodríguez-Guerra, and Ignacio Funes-Ardoiz, and Feliu Maseras},
+  title        = {EasyMECP},
+  month        = nov,
+  year         = 2018,
+  publisher    = {Zenodo},
+  version      = {v0.3.2},
+  doi          = {10.5281/zenodo.4293421},
+  url          = {https://doi.org/10.5281/zenodo.4293421}
+}
+```
 
 
 # More MECP implementations for Gaussian
