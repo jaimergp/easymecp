@@ -201,6 +201,8 @@ No files are lost with the restarts, if the `JOBS` folder already exists, new on
 
 # Cite this work
 
+Sanosa, N.; Sampedro, D.; Funes-Ardoiz, I. Eur. J. Org. Chem. 2026, 29, e70623 (https://doi.org/10.1002/ejoc.70623): tutorial including case-studies applying EasyMECP
+
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4293421.svg)](https://doi.org/10.5281/zenodo.4293421)
 
 ```
